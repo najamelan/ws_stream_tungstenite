@@ -1,0 +1,70 @@
+package:
+
+  # When releasing to crates.io:
+  #
+  # - Update CHANGELOG.md.
+  # - Update version numbers in Cargo.yml, Cargo.toml, install section of readme.
+  # - verify CI result
+  # - test dependent crates
+  # - cargo publish
+  # - merge dev branch into master
+  # - create git tag
+  #
+  version       : 0.1.0
+  name          : ws_stream_tungstenite
+  edition       : '2018'
+  authors       : [ Naja Melan <najamelan@autistici.org> ]
+  description   : Provide AsyncRead/AsyncWrite over Tungstenite WebSockets
+  license       : Unlicense
+  homepage      : https://github.com/najamelan/ws_stream_tungstenite
+  repository    : https://github.com/najamelan/ws_stream_tungstenite
+  documentation : https://docs.rs/ws_stream_tungstenite
+  readme        : README.md
+  keywords      : [ websocket, tokio, stream, async, futures ]
+  categories    : []
+
+  metadata:
+    docs.rs:
+      all-features: true
+
+
+features:
+
+  default: []
+
+  # only used internally, don't use
+  #
+  external_doc: []
+
+
+dependencies:
+
+  futures-preview   : { version: ^0.3.0-alpha, features: [io-compat, compat] }
+  futures_01        : { version: ^0.1, package: futures }
+  log               : ^0.4
+  tokio             : { version: ^0.1, default-features: false, features: [codec] }
+  tungstenite       : ^0.9
+  pin-utils         : ^0.1.0-alpha
+  tokio-tungstenite : { version: ^0.9 }
+
+dev-dependencies:
+
+  tokio-tls         : { version: ^0.2, default-features: false, features: [] }
+  pretty_assertions: ^0.6
+  futures_codec    : ^0.2
+  flexi_logger     : ^0.14
+  tokio-executor   : { version: ^0.1 }
+
+
+profile:
+
+  release:
+
+    codegen-units: 1
+
+
+patch:
+
+  crates-io:
+
+    futures_codec : { git: "https://github.com/matthunz/futures-codec.git" }

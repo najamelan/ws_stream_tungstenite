@@ -26,14 +26,11 @@
 )]
 
 
-mod error         ;
 mod ws_stream     ;
 pub(crate) mod tung_websocket;
 
 pub use
 {
-	error           :: * ,
-
 	self::ws_stream :: * ,
 };
 
@@ -46,12 +43,13 @@ mod import
 		futures_01        :: { stream::{ SplitStream as SplitStream01, SplitSink as SplitSink01, Stream as Stream01 } } ,
 		futures::compat   :: { Compat01As03, Compat01As03Sink                                                         } ,
 		futures           :: { prelude::{ Stream, Sink, AsyncRead, AsyncWrite }, Poll, task::Context, ready           } ,
-		futures           :: { StreamExt, TryStreamExt, stream::{ SplitStream, SplitSink, IntoAsyncRead }             } ,
-		log               :: { trace, error                                                                           } ,
-		std               :: { io::{ self }, pin::Pin, fmt, error::Error as StdError, ops::Deref                      } ,
+		futures           :: { StreamExt, SinkExt, TryStreamExt, stream::{ SplitStream, SplitSink, IntoAsyncRead }    } ,
+		log               :: { trace, debug, error, info                                                              } ,
+		std               :: { io::{ self }, pin::Pin, fmt, task::Waker, future::Future, borrow::Cow                  } ,
 		tokio             :: { io::{ AsyncRead as AsyncRead01, AsyncWrite as AsyncWrite01 }                           } ,
 		tokio_tungstenite :: { WebSocketStream as TTungSocket                                                         } ,
-		tungstenite       :: { Message as TungMessage, Error as TungErr                                               } ,
+		tungstenite       :: { Message as TungMessage, Error as TungErr, protocol::{ CloseFrame, frame::coding::CloseCode } } ,
+		pin_utils         :: { pin_mut } ,
 	};
 }
 

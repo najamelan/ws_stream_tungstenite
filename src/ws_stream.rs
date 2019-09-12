@@ -44,7 +44,8 @@ impl<S: AsyncRead01 + AsyncWrite01> fmt::Debug for WsStream<S>
 
 impl<S: AsyncRead01 + AsyncWrite01> AsyncWrite for WsStream<S>
 {
-	// TODO: on WouldBlock, we should wake up the task when it becomes ready.
+	/// Will always flush the underlying socket. Will always create an entire Websocket message from every write,
+	/// so call with a sufficiently large buffer if you have performance problems.
 	//
 	fn poll_write( mut self: Pin<&mut Self>, cx: &mut Context<'_>, buf: &[u8] ) -> Poll< io::Result<usize> >
 	{
@@ -54,17 +55,14 @@ impl<S: AsyncRead01 + AsyncWrite01> AsyncWrite for WsStream<S>
 
 		if let Err( e ) = res
 		{
-			trace!( "WsStream: poll_write_impl SINK not READY" );
+			trace!( "{:?}: AsyncWrite - poll_write SINK not READY", self );
 
 			return Poll::Ready(Err( e ))
 		}
 
 
 		// FIXME: avoid extra copy?
-		// The type of our sink is Message, but to create that you always have to decide whether
-		// it's a TungMessage or a WarpMessage. Since converting from WarpMessage to TungMessage requires a
-		// copy, we create it from TungMessage.
-		// TODO: create a constructor on Message that automatically defaults to TungMessage here.
+		// would require a different signature of both AsyncWrite and Tungstenite (Bytes from bytes crate for example)
 		//
 		match Pin::new( &mut self.sink ).start_send( buf.into() )
 		{
@@ -90,7 +88,7 @@ impl<S: AsyncRead01 + AsyncWrite01> AsyncWrite for WsStream<S>
 				//
 				let _ = Pin::new( &mut self.sink ).poll_flush( cx );
 
-				trace!( "WsStream: poll_write_impl, wrote {} bytes", buf.len() );
+				trace!( "{:?}: AsyncWrite - poll_write, wrote {} bytes", self, buf.len() );
 
 				Poll::Ready(Ok ( buf.len() ))
 			}
@@ -116,16 +114,15 @@ impl<S: AsyncRead01 + AsyncWrite01> AsyncWrite for WsStream<S>
 	{
 		trace!( "{:?}: AsyncWrite - poll_close", self );
 
-		match Pin::new( &mut self.sink ).poll_close( cx )
-		{
-			Poll::Ready( Err(e) ) =>
+		ready!( Pin::new( &mut self.sink ).poll_close( cx ) )
+
+			.map_err( |e|
 			{
 				error!( "{}", e );
-				Poll::Ready( Err( e ) )
-			}
+				e
+			})
 
-			_ => Ok(()).into(),
-		}
+			.into()
 	}
 }
 

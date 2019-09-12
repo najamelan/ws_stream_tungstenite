@@ -23,7 +23,13 @@ version = "^0.9"
 [dev-dependencies]
 flexi_logger = "^0.14"
 futures_codec = "^0.2"
+futures_ringbuf = "^0.1"
 pretty_assertions = "^0.6"
+url = "^2"
+
+[dev-dependencies.futures-preview]
+features = ["async-await", "nightly"]
+version = "^0.3.0-alpha"
 
 [dev-dependencies.tokio-executor]
 version = "^0.1"
@@ -59,6 +65,9 @@ all-features = true
 [patch.crates-io]
 [patch.crates-io.futures_codec]
 git = "https://github.com/matthunz/futures-codec.git"
+
+[patch.crates-io.tungstenite]
+path = "../tungstenite-rs"
 
 [profile]
 [profile.release]

@@ -46,6 +46,7 @@ dependencies:
   tungstenite       : ^0.9
   pin-utils         : ^0.1.0-alpha
   tokio-tungstenite : { version: ^0.9 }
+  pin-utils         : ^0.1.0-alpha
 
 dev-dependencies:
 
@@ -54,6 +55,9 @@ dev-dependencies:
   futures_codec    : ^0.2
   flexi_logger     : ^0.14
   tokio-executor   : { version: ^0.1 }
+  url              : ^2
+  futures_ringbuf  : ^0.1
+  futures-preview  : { version: ^0.3.0-alpha, features: [async-await, nightly] }
 
 
 profile:
@@ -67,4 +71,5 @@ patch:
 
   crates-io:
 
-    futures_codec : { git: "https://github.com/matthunz/futures-codec.git" }
+    futures_codec : { git: "https://github.com/matthunz/futures-codec.git"   }
+    tungstenite   : { path: ../tungstenite-rs }

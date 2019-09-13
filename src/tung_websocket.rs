@@ -245,6 +245,17 @@ impl<S: AsyncRead01 + AsyncWrite01> Sink<Vec<u8>> for TungWebSocket<S>
 	}
 
 
+	/// ### Errors
+	///
+	/// The following errors can be returned when writing to the stream:
+	///
+	/// - [`io::ErrorKind::InvalidData`]: This means that a tungstenite::error::Capacity occurred. This means that
+	///   you send in a buffer bigger than the maximum message size configured on the underlying websocket connection.
+	///   If you did not set it manually, the default for tungstenite is 64MB.
+	///
+	/// - other std::io::Error's generally mean something went wrong on the underlying transport. Consider these fatal
+	///   and just drop the connection.
+	//
 	fn start_send( mut self: Pin<&mut Self>, item: Vec<u8> ) -> Result<(), Self::Error>
 	{
 		trace!( "TungWebSocket: start_send" );
@@ -302,22 +313,53 @@ impl<S: AsyncRead01 + AsyncWrite01> Sink<Vec<u8>> for TungWebSocket<S>
 
 
 
+// Convert tungstenite errors that can happen during sending into io::Error.
+//
 fn to_io_error( err: TungErr ) -> io::Error
 {
 	error!( "{:?}", &err );
 
 	match err
 	{
-		TungErr::Io(err)          => err                                            ,
-		TungErr::ConnectionClosed => io::Error::from( io::ErrorKind::NotConnected ) ,
-		TungErr::AlreadyClosed    => io::Error::from( io::ErrorKind::NotConnected ) ,
+		// Mainly on the underlying stream. Fatal
+		//
+		TungErr::Io(err) => err,
 
-		TungErr::Protocol(string) =>
+
+		// Connection is closed, does not indicate something went wrong
+		//
+		TungErr::ConnectionClosed => io::ErrorKind::NotConnected.into() ,
+		TungErr::AlreadyClosed    => io::ErrorKind::NotConnected.into() ,
+
+
+		// This shouldn't happen, we should not cause any protocol errors, since we abstract
+		// away the websocket protocol for users. They shouldn't be able to trigger this through our API.
+		//
+		TungErr::Protocol(_string) =>
 		{
-			error!( "Protocol error from Tungstenite: {}", string );
-			io::Error::from( io::ErrorKind::ConnectionReset )
+			unreachable!( "protocol error from tungstenite on send is bug in ws_stream_tungstenite, please report" );
+			// io::Error::new( io::ErrorKind::ConnectionReset, string )
 		}
 
-		_ => io::Error::from( io::ErrorKind::Other ) ,
+
+		// This can happen when we create a message bigger than max message size in tungstenite.
+		//
+		TungErr::Capacity(string) => io::Error::new( io::ErrorKind::InvalidData, string ),
+
+
+		// This is dealt with by backpressure in the compat layer over tokio-tungstenite.
+		// We should never see this error.
+		//
+		TungErr::SendQueueFull(_) |
+
+		// These are handshake errors
+		//
+		TungErr::Tls (..) |
+		TungErr::Http(..) |
+		TungErr::Url (..) |
+
+		// This is an error specific to Text Messages that we don't use
+		//
+		TungErr::Utf8 => unreachable!() ,
 	}
 }

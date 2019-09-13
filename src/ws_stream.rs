@@ -41,7 +41,17 @@ impl<S: AsyncRead01 + AsyncWrite01> fmt::Debug for WsStream<S>
 
 
 
-
+/// ### Errors
+///
+/// The following errors can be returned when writing to the stream:
+///
+/// - [`io::ErrorKind::InvalidData`]: This means that a tungstenite::error::Capacity occurred. This means that
+///   you send in a buffer bigger than the maximum message size configured on the underlying websocket connection.
+///   If you did not set it manually, the default for tungstenite is 64MB.
+///
+/// - other std::io::Error's generally mean something went wrong on the underlying transport. Consider these fatal
+///   and just drop the connection.
+//
 impl<S: AsyncRead01 + AsyncWrite01> AsyncWrite for WsStream<S>
 {
 	/// Will always flush the underlying socket. Will always create an entire Websocket message from every write,

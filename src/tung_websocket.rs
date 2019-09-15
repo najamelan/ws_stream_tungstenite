@@ -7,11 +7,8 @@ use crate:: { import::* };
 //
 pub(crate) struct TungWebSocket<S: AsyncRead01 + AsyncWrite01>
 {
-	sink          : Compat01As03Sink< SplitSink01  < TTungSocket<S> >, TungMessage > ,
-	stream        : Compat01As03    < SplitStream01< TTungSocket<S> >              > ,
-	closer        : Option<Waker>                                                    ,
-	close_received: bool                                                             ,
-	close_sent    : bool                                                             ,
+	sink  : Compat01As03Sink< SplitSink01  < TTungSocket<S> >, TungMessage > ,
+	stream: Compat01As03    < SplitStream01< TTungSocket<S> >              > ,
 }
 
 
@@ -25,30 +22,13 @@ impl<S: AsyncRead01 + AsyncWrite01> TungWebSocket<S>
 
 		Self
 		{
-			stream        : Compat01As03    ::new( rx ) ,
-			sink          : Compat01As03Sink::new( tx ) ,
-			closer        : None                        ,
-			close_received: false                       ,
-			close_sent    : false                       ,
+			stream: Compat01As03    ::new( rx ) ,
+			sink  : Compat01As03Sink::new( tx ) ,
 		}
 	}
 
 
-	/// Wake up any task that waits for the remote to acknowledge the close frame.
-	//
-	fn close_received( &mut self )
-	{
-		self.close_received = true;
-
-		if let Some(waker) = self.closer.take()
-		{
-			info!( "waking closer" );
-			waker.wake();
-		}
-	}
-
-
-	async fn close_with_code_and_reason( mut self: Pin<&mut Self>, code: CloseCode, reason: Cow<'static, str> )
+	async fn close_because( mut self: Pin<&mut Self>, code: CloseCode, reason: Cow<'static, str> )
 
 		-> Result<(), io::Error>
 	{
@@ -60,7 +40,6 @@ impl<S: AsyncRead01 + AsyncWrite01> TungWebSocket<S>
 			reason: reason ,
 		};
 
-		self.close_sent = true;
 		self.sink.send( TungMessage::Close(Some( frame )) ).await.map_err( |e| to_io_error(e) )
 	}
 }
@@ -74,8 +53,7 @@ impl<S: AsyncRead01 + AsyncWrite01> Stream for TungWebSocket<S>
 
 	/// Get the next websocket message and convert it to a Vec<u8>.
 	///
-	/// When None is returned, it means it is safe to drop the underlying connection after calling [`close`]
-	/// on this object and waiting for it to resolve.
+	/// When None is returned, it means it is safe to drop the underlying connection.
 	///
 	/// ### Errors
 	///
@@ -101,16 +79,7 @@ impl<S: AsyncRead01 + AsyncWrite01> Stream for TungWebSocket<S>
 
 		match res
 		{
-			None =>
-			{
-				// If the stream ends without sending us a close frame, we still want to wake up the
-				// writer task.
-				//
-				self.close_received();
-
-				Poll::Ready( None )
-			}
-
+			None => None.into(),
 
 			Some(Ok ( msg )) =>
 			{
@@ -123,7 +92,7 @@ impl<S: AsyncRead01 + AsyncWrite01> Stream for TungWebSocket<S>
 					{
 						let string = "Text messages are not supported";
 
-						let fut = self.close_with_code_and_reason( CloseCode::Protocol, string.into() );
+						let fut = self.close_because( CloseCode::Unsupported, string.into() );
 
 						pin_mut!( fut  );
 
@@ -139,8 +108,6 @@ impl<S: AsyncRead01 + AsyncWrite01> Stream for TungWebSocket<S>
 					TungMessage::Close (opt) =>
 					{
 						debug!( "received close frame: {:?}", opt );
-
-						self.close_received();
 
 						// Tungstenite will keep this stream around until the underlying connection closes.
 						// It's important we don't return None here so clients don't drop the underlying connection
@@ -165,17 +132,23 @@ impl<S: AsyncRead01 + AsyncWrite01> Stream for TungWebSocket<S>
 				match err
 				{
 					// Just return None, as no more data will come in.
+					// This can mean tungstenite state is Terminated and we can safely drop the underlying connection.
+					// Note that tungstenite only set's this on the client after the server has closed the underlying
+					// connection, to comply with the RFC.
 					//
 					TungErr::ConnectionClosed |
-					TungErr::AlreadyClosed    => None.into(),
+					TungErr::AlreadyClosed =>
+					{
+						None.into()
+					}
 
-					TungErr::Io(e)            => Some( Err(e) ).into(),
+					TungErr::Io(e) => Some( Err(e) ).into(),
 
 					TungErr::Protocol(string) =>
 					{
 						error!( "Protocol error from Tungstenite: {}", string );
 
-						let fut = self.close_with_code_and_reason( CloseCode::Protocol, string.clone() );
+						let fut = self.close_because( CloseCode::Protocol, string.clone() );
 
 						pin_mut!( fut  );
 
@@ -194,7 +167,7 @@ impl<S: AsyncRead01 + AsyncWrite01> Stream for TungWebSocket<S>
 					{
 						let string = "Text messages are not supported";
 
-						let fut = self.close_with_code_and_reason( CloseCode::Unsupported, string.into() );
+						let fut = self.close_because( CloseCode::Unsupported, string.into() );
 
 						pin_mut!( fut  );
 
@@ -271,43 +244,14 @@ impl<S: AsyncRead01 + AsyncWrite01> Sink<Vec<u8>> for TungWebSocket<S>
 	}
 
 
-	/// Will resolve when the remote has acknowlegded the close and it is safe to drop the underlying
-	/// network connection.
+	/// Will resolve immediately. Keep polling the stream until it returns None. To make sure
+	/// to keep the underlying connection alive until the close handshake is finished.
 	//
 	fn poll_close( mut self: Pin<&mut Self>, cx: &mut Context<'_> ) -> Poll<Result<(), Self::Error>>
 	{
 		trace!( "TungWebSocket: poll_close" );
 
-		// close_received means either we initiated it somehow, or tungstenite will have replied to it anyway, so this means
-		// that we have both sent and received a close frame.
-		//
-		// close_sent is there because we also sometimes close the connection from the reader part when protocol errors happen.
-		// It prevents us from sending close to the underlying tungstenite object twice.
-		//
-		if self.close_received || self.close_sent
-		{
-			Ok(()).into()
-		}
-
-		else
-		{
-			self.close_sent = true;
-
-			match ready!( Pin::new( &mut self.sink ).poll_close( cx ).map_err( |e| to_io_error(e) ) )
-			{
-				Err(e ) => Err(e).into(),
-
-				// Wait for the remote to acknowledge
-				//
-				Ok (()) =>
-				{
-					self.closer = Some( cx.waker().clone() );
-
-					trace!( "TungWebSocket: poll_close returning Pending" );
-					Poll::Pending
-				}
-			}
-		}
+		Pin::new( &mut self.sink ).poll_close( cx ).map_err( |e| to_io_error(e) )
 	}
 }
 

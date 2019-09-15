@@ -8,7 +8,7 @@
 use
 {
 	ws_stream_tungstenite :: { *                                                                       } ,
-	futures       :: { StreamExt, SinkExt, channel::oneshot, executor::LocalPool, task::LocalSpawnExt, join } ,
+	futures       :: { StreamExt, SinkExt, channel::oneshot, executor::LocalPool, task::LocalSpawnExt  } ,
 	futures_codec :: { LinesCodec, Framed                                                              } ,
 	tokio                 :: { net::{ TcpListener }                                                    } ,
 	futures::compat       :: { Future01CompatExt, Stream01CompatExt                                    } ,
@@ -44,16 +44,11 @@ fn frame03()
 		sink.send( "A line\n"       .to_string() ).await.expect( "Send a line" );
 		sink.send( "A second line\n".to_string() ).await.expect( "Send a line" );
 
-		let (close, read) = join!
-		(
-			sink.close(),
-			stream.next() ,
+		sink.close().await.expect( "close server" );
 
-		);
+		let read = stream.next().await.transpose().expect( "close connection" );
 
-		close.expect( "close connection" );
-
-		assert_eq!( None, read.transpose().expect( "receive close" ) );
+		assert_eq!( None, read );
 	};
 
 
@@ -120,15 +115,11 @@ fn partial()
 		sink.send( "line\n"         .to_string() ).await.expect( "Send a line" );
 		sink.send( "A second line\n".to_string() ).await.expect( "Send a line" );
 
-		let (close, read) = join!
-		(
-			sink.close(),
-			stream.next() ,
+		sink.close().await.expect( "close server" );
 
-		);
+		let read = stream.next().await.transpose().expect( "close connection" );
 
-		close.expect( "close connection" );
-		read.transpose().expect( "close connection" );
+		assert_eq!( None, read );
 	};
 
 

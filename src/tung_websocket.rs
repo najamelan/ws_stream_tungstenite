@@ -235,7 +235,8 @@ impl<S: AsyncRead01 + AsyncWrite01> Sink<Vec<u8>> for TungWebSocket<S>
 		Pin::new( &mut self.sink ).start_send( item.into() ).map_err( |e| to_io_error(e) )
 	}
 
-
+	/// This will do a send under the hood, so the same errors as from start_send can occur here.
+	//
 	fn poll_flush( mut self: Pin<&mut Self>, cx: &mut Context<'_> ) -> Poll<Result<(), Self::Error>>
 	{
 		trace!( "TungWebSocket: poll_flush" );
@@ -246,12 +247,24 @@ impl<S: AsyncRead01 + AsyncWrite01> Sink<Vec<u8>> for TungWebSocket<S>
 
 	/// Will resolve immediately. Keep polling the stream until it returns None. To make sure
 	/// to keep the underlying connection alive until the close handshake is finished.
+	///
+	/// This will do a send under the hood, so the same errors as from start_send can occur here,
+	/// except InvalidData.
 	//
 	fn poll_close( mut self: Pin<&mut Self>, cx: &mut Context<'_> ) -> Poll<Result<(), Self::Error>>
 	{
 		trace!( "TungWebSocket: poll_close" );
 
-		Pin::new( &mut self.sink ).poll_close( cx ).map_err( |e| to_io_error(e) )
+		// We ignore closed errors since that's what we want, and because after calling this method
+		// the sender task can in any case be dropped, and verifying that the connection can actually
+		// be closed should be done through the reader task.
+		//
+		match ready!( Pin::new( &mut self.sink ).poll_close( cx ) )
+		{
+			Err( TungErr::AlreadyClosed ) | Err( TungErr::ConnectionClosed ) => Ok(()),
+			x => x,
+
+		}.map_err( |e| to_io_error(e) ).into()
 	}
 }
 

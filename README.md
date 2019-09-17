@@ -52,7 +52,7 @@ With raw Cargo.toml
 ```toml
 [dependencies]
 
-   ws_stream_tungstenite = "^0.1-alpha"
+   ws_stream_tungstenite = "0.1-alpha"
 ```
 
 ### Upgrade

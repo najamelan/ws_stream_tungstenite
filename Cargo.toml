@@ -1,4 +1,11 @@
 # Auto-generated from "Cargo.yml"
+[badges]
+[badges.maintenance]
+status = "actively-developed"
+
+[badges.travis-ci]
+repository = "najamelan/ws_stream_tungstenite"
+
 [dependencies]
 log = "^0.4"
 pin-utils = "^0.1.0-alpha"

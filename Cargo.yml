@@ -27,6 +27,10 @@ package:
     docs.rs:
       features: [ external_doc ]
 
+badges:
+
+  maintenance : { status     : actively-developed              }
+  travis-ci   : { repository : najamelan/ws_stream_tungstenite }
 
 features:
 

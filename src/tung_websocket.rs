@@ -36,13 +36,9 @@ impl<S: AsyncRead01 + AsyncWrite01> TungWebSocket<S>
 	{
 		// TODO: check close_sent?
 		//
-		let frame = CloseFrame
-		{
-			code  : code   ,
-			reason: reason ,
-		};
+		let frame = CloseFrame { code, reason };
 
-		self.sink.send( TungMessage::Close(Some( frame )) ).await.map_err( |e| to_io_error(e) )
+		self.sink.send( TungMessage::Close(Some( frame )) ).await.map_err( to_io_error )
 	}
 }
 
@@ -233,7 +229,7 @@ impl<S: AsyncRead01 + AsyncWrite01> Sink<Vec<u8>> for TungWebSocket<S>
 
 	fn poll_ready( mut self: Pin<&mut Self>, cx: &mut Context<'_> ) -> Poll<Result<(), Self::Error>>
 	{
-		Pin::new( &mut self.sink ).poll_ready( cx ).map_err( |e| to_io_error(e) )
+		Pin::new( &mut self.sink ).poll_ready( cx ).map_err( to_io_error )
 	}
 
 
@@ -254,7 +250,7 @@ impl<S: AsyncRead01 + AsyncWrite01> Sink<Vec<u8>> for TungWebSocket<S>
 	fn start_send( mut self: Pin<&mut Self>, item: Vec<u8> ) -> Result<(), Self::Error>
 	{
 		trace!( "TungWebSocket: start_send" );
-		Pin::new( &mut self.sink ).start_send( item.into() ).map_err( |e| to_io_error(e) )
+		Pin::new( &mut self.sink ).start_send( item.into() ).map_err( to_io_error )
 	}
 
 	/// This will do a send under the hood, so the same errors as from start_send can occur here.
@@ -263,7 +259,7 @@ impl<S: AsyncRead01 + AsyncWrite01> Sink<Vec<u8>> for TungWebSocket<S>
 	{
 		trace!( "TungWebSocket: poll_flush" );
 
-		Pin::new( &mut self.sink ).poll_flush( cx ).map_err( |e| to_io_error(e) )
+		Pin::new( &mut self.sink ).poll_flush( cx ).map_err( to_io_error )
 	}
 
 
@@ -281,7 +277,7 @@ impl<S: AsyncRead01 + AsyncWrite01> Sink<Vec<u8>> for TungWebSocket<S>
 		// the sender task can in any case be dropped, and verifying that the connection can actually
 		// be closed should be done through the reader task.
 		//
-		Pin::new( &mut self.sink ).poll_close( cx ).map_err( |e| to_io_error(e) )
+		Pin::new( &mut self.sink ).poll_close( cx ).map_err( to_io_error )
 	}
 }
 

@@ -25,7 +25,7 @@ package:
 
   metadata:
     docs.rs:
-      all-features: true
+      features: [ external_doc ]
 
 
 features:

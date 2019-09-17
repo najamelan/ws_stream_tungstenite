@@ -60,7 +60,7 @@ version = "0.1.0-alpha.1"
 
 [package.metadata]
 [package.metadata."docs.rs"]
-all-features = true
+features = ["external_doc"]
 
 [patch]
 [patch.crates-io]

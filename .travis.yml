@@ -1,5 +1,5 @@
 language: rust
-rust    : [ beta, nightly ]
+rust    : [ nightly ]
 
 # Need to cache the whole `.cargo` directory to keep .crates.toml for
 # cargo-update to work
@@ -38,12 +38,14 @@ matrix:
         - cargo test --release --all-features
         - cargo doc --no-deps --all-features
 
-    - os    : osx
+    - os: osx
+
       script:
         - cargo test --all-features
 
 
-    - os    : windows
+    - os: windows
+
       script:
         - cargo test --all-features
 

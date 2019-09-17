@@ -1,9 +1,5 @@
 // Test using the AsyncRead/AsyncWrite from futures 0.3
 //
-//
-//
-
-
 use
 {
 	ws_stream_tungstenite :: { *                                                                } ,

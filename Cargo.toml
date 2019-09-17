@@ -42,11 +42,6 @@ version = "^0.3.0-alpha"
 [dev-dependencies.tokio-executor]
 version = "^0.1"
 
-[dev-dependencies.tokio-tls]
-default-features = false
-features = []
-version = "^0.2"
-
 [features]
 default = []
 external_doc = []

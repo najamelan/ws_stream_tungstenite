@@ -2,15 +2,15 @@
 //
 use
 {
-	ws_stream_tungstenite :: { *                                                                              } ,
+	ws_stream_tungstenite :: { *                                                                                     } ,
 	futures               :: { StreamExt, SinkExt, executor::LocalPool, task::LocalSpawnExt, compat::Sink01CompatExt } ,
-	futures_codec         :: { LinesCodec, Framed                                                             } ,
-	tokio                 :: { net::{ TcpListener }                                                           } ,
-	futures::compat       :: { Future01CompatExt, Stream01CompatExt                                           } ,
-	futures_01            :: { future::{ ok, Future as _ }                                                    } ,
-	tokio_tungstenite     :: { accept_async, connect_async                                                    } ,
-	url                   :: { Url                                                                            } ,
-	tungstenite           :: { protocol::{ CloseFrame, frame::coding::CloseCode }                             } ,
+	futures_codec         :: { LinesCodec, Framed                                                                    } ,
+	tokio                 :: { net::{ TcpListener }                                                                  } ,
+	futures::compat       :: { Future01CompatExt, Stream01CompatExt                                                  } ,
+	futures_01            :: { future::{ ok, Future as _ }                                                           } ,
+	tokio_tungstenite     :: { accept_async, connect_async                                                           } ,
+	url                   :: { Url                                                                                   } ,
+	tungstenite           :: { protocol::{ CloseFrame, frame::coding::CloseCode }                                    } ,
 
 	log           :: { * } ,
 };

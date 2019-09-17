@@ -3,22 +3,22 @@
 //
 use
 {
-	ws_stream_tungstenite :: { *                                                              } ,
-	futures               :: { StreamExt, AsyncReadExt, AsyncBufReadExt, io::BufReader        } ,
-	futures               :: { executor::LocalPool, task::LocalSpawnExt } ,
-	futures::compat       :: { Future01CompatExt, Stream01CompatExt                           } ,
-	std                   :: { env, net::SocketAddr, io                                           } ,
-	log                   :: { *                                                              } ,
-	tokio                 :: { net::{ TcpListener, TcpStream }                                } ,
-	futures_01            :: { future::{ ok, Future as _ }                               } ,
-	tokio_tungstenite     :: { accept_async, stream::PeerAddr                               } ,
+	ws_stream_tungstenite :: { *                                                       } ,
+	futures               :: { StreamExt, AsyncReadExt, AsyncBufReadExt, io::BufReader } ,
+	futures               :: { executor::LocalPool, task::LocalSpawnExt                } ,
+	futures::compat       :: { Future01CompatExt, Stream01CompatExt                    } ,
+	std                   :: { env, net::SocketAddr, io                                } ,
+	log                   :: { *                                                       } ,
+	tokio                 :: { net::{ TcpListener, TcpStream }                         } ,
+	futures_01            :: { future::{ ok, Future as _ }                             } ,
+	tokio_tungstenite     :: { accept_async, stream::PeerAddr                          } ,
 };
 
 
 
 fn main()
 {
-	// flexi_logger::Logger::with_str( "echo=trace, ws_stream=trace, tungstenite=trace, tokio_tungstenite=trace, tokio=warn" ).start().unwrap();
+	flexi_logger::Logger::with_str( "echo=trace, ws_stream_tungstenite=debug, tungstenite=warn, tokio_tungstenite=warn, tokio=warn" ).start().unwrap();
 
 	// We only need one thread.
 	//
@@ -94,17 +94,6 @@ async fn handle_conn( stream: Result< TcpStream, io::Error> )
 
 		Err(e) => match e.kind()
 		{
-			// When the client closes the connection, the stream will return None, but then
-			// `forward` will call poll_close on the sink, which obviously is the same connection,
-			// and thus already closed. Thus we will always get a ConnectionClosed error at the end of
-			// this, so we ignore it.
-			//
-			// In principle this risks missing the error if it happens before the connection is
-			// supposed to end, so in production code you should probably manually implement forward
-			// for an echo server.
-			//
-			std::io::ErrorKind::NotConnected => {}
-
 			// Other errors we want to know about
 			//
 			_ => { error!( "{:?}", e.kind() ) }

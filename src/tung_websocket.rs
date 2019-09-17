@@ -9,6 +9,7 @@ pub(crate) struct TungWebSocket<S: AsyncRead01 + AsyncWrite01>
 {
 	sink  : Compat01As03Sink< SplitSink01  < TTungSocket<S> >, TungMessage > ,
 	stream: Compat01As03    < SplitStream01< TTungSocket<S> >              > ,
+	broken: bool                                                             ,
 }
 
 
@@ -24,6 +25,7 @@ impl<S: AsyncRead01 + AsyncWrite01> TungWebSocket<S>
 		{
 			stream: Compat01As03    ::new( rx ) ,
 			sink  : Compat01As03Sink::new( tx ) ,
+			broken: false                       ,
 		}
 	}
 
@@ -142,7 +144,24 @@ impl<S: AsyncRead01 + AsyncWrite01> Stream for TungWebSocket<S>
 						None.into()
 					}
 
-					TungErr::Io(e) => Some( Err(e) ).into(),
+					// This generally means the underlying transport is broken. Tungstenite will keep bubbling up the
+					// same error over and over, which is quite a hassle to handle properly.
+					//
+					// So we return it once, and if a second error happens, we just return None.
+					//
+					TungErr::Io(e) =>
+					{
+						if self.broken
+						{
+							None.into()
+						}
+
+						else
+						{
+							self.broken = true;
+							Some( Err(e) ).into()
+						}
+					}
 
 					TungErr::Protocol(string) =>
 					{
@@ -222,6 +241,9 @@ impl<S: AsyncRead01 + AsyncWrite01> Sink<Vec<u8>> for TungWebSocket<S>
 	///
 	/// The following errors can be returned when writing to the stream:
 	///
+	/// - [`io::ErrorKind::NotConnected`]: This means that the connection is already closed. You should
+	///   drop it. It is safe to drop the underlying connection.
+	///
 	/// - [`io::ErrorKind::InvalidData`]: This means that a tungstenite::error::Capacity occurred. This means that
 	///   you send in a buffer bigger than the maximum message size configured on the underlying websocket connection.
 	///   If you did not set it manually, the default for tungstenite is 64MB.
@@ -259,12 +281,7 @@ impl<S: AsyncRead01 + AsyncWrite01> Sink<Vec<u8>> for TungWebSocket<S>
 		// the sender task can in any case be dropped, and verifying that the connection can actually
 		// be closed should be done through the reader task.
 		//
-		match ready!( Pin::new( &mut self.sink ).poll_close( cx ) )
-		{
-			Err( TungErr::AlreadyClosed ) | Err( TungErr::ConnectionClosed ) => Ok(()),
-			x => x,
-
-		}.map_err( |e| to_io_error(e) ).into()
+		Pin::new( &mut self.sink ).poll_close( cx ).map_err( |e| to_io_error(e) )
 	}
 }
 

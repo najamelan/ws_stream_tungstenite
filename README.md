@@ -8,15 +8,17 @@
 
 > Provide an AsyncRead/Write over websockets that can be framed with a codec.
 
-This crate provides AsyncRead/Write over websockets. It mainly enables working with rust wasm code and communicating over a framed stream of bytes. This crate provides the functionality for non-WASM targets. There is a WASM version [available here](https://crates.io/crates/ws_stream_tungstenite_wasm).
+This crate provides AsyncRead/Write over _tokio-tungstenite_ websockets. It mainly enables working with rust wasm code and communicating over a framed stream of bytes. This crate provides the functionality for non-WASM targets (eg. server side).
+There is a WASM version [available here](https://crates.io/crates/ws_stream_wasm) for the client side.
 
-There are currently 2 versions of the AsyncRead/Write traits. The futures-rs version and the tokio version. This crate implements the futures version only for now. We will see how the ecosystem evolves and adapt. This means you can frame your connection with the [`futures-codec`](https://crates.io/crates/futures_codec) crate. You can send arbitrary rust structs using [`futures_cbor_codec`](https://crates.io/crates/futures_cbor_codec). Know that the interface of futures-codec is identical to the tokio-codec one, so converting a codec is trivial.
+There are currently 2 versions of the AsyncRead/Write traits. The _futures-rs_ version and the _tokio_ version. This crate implements the futures version only for now. We will see how the ecosystem evolves and adapt. This means you can frame your connection with the [`futures-codec`](https://crates.io/crates/futures_codec) crate. You can send arbitrary rust structs using [`futures_cbor_codec`](https://crates.io/crates/futures_cbor_codec). Know that the interface of _futures-codec_ is identical to the _tokio-codec_ one, so converting a codec is trivial.
 
-You might wonder, why not just serialize your struct and send it in websocket messages. First of all, on wasm there wasn't a convennient rust crate before I released ws_stream_tungstenite_wasm. Next, this allows you to keep your code generic by just taking AsyncRead/Write instead of adapting it to a specific protocol like websockets, which is especially useful in library crates.
+You might wonder, why not just serialize your struct and send it in websocket messages. First of all, on wasm there wasn't a convenient websocket rust crate before I released _ws_stream_wasm_, even without AsyncRead/Write. Next, this allows you to keep your code generic by just taking AsyncRead/Write instead of adapting it to a specific protocol like websockets, which is especially useful in library crates.
 
-Currently backend providers are still on futures 0.1, so frequent changes are expected in the upcoming months. We support tokio-tunstenite and warp. Warp support has been included because often when writing a fullstack rust application, even if you prefer communicating over websockets, you will usually need to serve some static files as well. Warp adds a rather convenient http server with good performance for your static files.
+Currently _tokio-tungstenite_ is still on futures 0.1, so frequent changes are expected in the upcoming months and this will remain in alpha until the ecosystem stabelizes somewhat.
 
-ws_stream_tungstenite provides both client and server functionality over tokio-tungstenite, and server functionality with warp. Both tls and plain connections are supported for each of those.
+_ws_stream_tungstenite_ works on top of _tokio-tungstenite_, so you will have to use the API from _tokio-tungstenite_ to setup your
+connection and pass the `WebSocketStream` to `WsStream`.
 
 ## Table of Contents
 
@@ -24,6 +26,10 @@ ws_stream_tungstenite provides both client and server functionality over tokio-t
   - [Upgrade](#upgrade)
   - [Dependencies](#dependencies)
 - [Usage](#usage)
+  - [Example](#example)
+  - [How to close a connection](#how-to-close-a-connection)
+  - [Error Handling](#error-handling)
+  - [Limitations](#limitations)
   - [API](#api)
 - [References](#references)
 - [Contributing](#contributing)
@@ -39,14 +45,14 @@ With [cargo yaml](https://gitlab.com/storedbox/cargo-yaml):
 ```yaml
 dependencies:
 
-  ws_stream_tungstenite: ^0.1
+  ws_stream_tungstenite: ^0.1-alpha
 ```
 
 With raw Cargo.toml
 ```toml
 [dependencies]
 
-   ws_stream_tungstenite = "^0.1"
+   ws_stream_tungstenite = "^0.1-alpha"
 ```
 
 ### Upgrade
@@ -57,12 +63,22 @@ Please check out the [changelog](https://github.com/najamelan/ws_stream_tungsten
 
 This crate has few dependiencies. Cargo will automatically handle it's dependencies for you.
 
+Note that we currently depend on both futures and tokio 0.1, which adds some bloat. Hopefully it won't take to long before we can drop the 0.1 stuff forever.
+
+Warning: Currently we are waiting for bugfixes to be released in 2 dependencies. We use the following patch section. You should
+probably add that as well.
+```yaml
+patch:
+
+  crates-io:
+
+    futures_codec : { git: "https://github.com/matthunz/futures-codec.git" }
+    tungstenite   : { git: "https://github.com/najamelan/tungstenite-rs"   }
+```
+
 ### Features
 
-Either backend can be enabled through the features `warp` and `tungstenite`.
-
-TLS support needs to be enabled with the `tls` feature.
-
+There are no optional features.
 
 ## Usage
 
@@ -70,84 +86,92 @@ Please have a look in the [examples directory of the repository](https://github.
 
 The [integration tests](https://github.com/najamelan/ws_stream_tungstenite/tree/master/tests) are also useful.
 
+### Example
+
+This is the most basic idea (for client code):
+
+```rust, ignore
+let     socket      = TcpListener::bind( &"127.0.0.1:3012".parse().unwrap() ).unwrap();
+let mut connections = socket.incoming().compat();
+
+let tcp = connections.next().await.expect( "1 connection" ).expect( "tcp connect" );
+let s   = ok( tcp ).and_then( accept_async ).compat().await.expect( "ws handshake" );
+let ws  = WsStream::new( s );
+
+let (mut sink, mut stream) = Framed::new( ws, LinesCodec {} ).split();
+
+
+while let Some( msg ) = stream.next().await
+{
+   let msg = match msg
+   {
+      Err(e) =>
+      {
+         error!( "Error on server stream: {:?}", e );
+
+         // Errors are generally fatal.
+         // if possible ws_stream will try to close the connection with a clean handshake,
+         // but if the error persists, it will just give up and return None next iteration,
+         // after which we should drop the connection.
+         //
+         continue;
+      }
+
+      Ok(m) => m,
+   };
+
+
+   info!( "server received: {}", msg.trim() );
+
+   // ... do something usefull
+}
+
+// safe to drop the tcp connection
+```
+
 
 ### How to close a connection
 The websocket RFC specefies the close handshake, summarized as follows:
-- when an endpoint wants to close the connection, it sends an close frame and after that it sends no more data.
+- when an endpoint wants to close the connection, it sends a close frame and after that it sends no more data.
   Since the other endpoint might still be sending data, it's best to continue processing incoming data, until:
 - the remote sends an acknowledgement of the close frame.
 - after an endpoint has both sent and received a close frame, the connection is considered closed and the server
   is to close the underlying tcp connection. The client can chose to close it if the server doesn't in a timely manner.
 
-Let's see how we can do this with ws_stream_tungstenite:
-```rust
-```
+Properly closing the connection with _ws_stream_tungstenite_ is pretty simple. If the remote endpoint initiates the close,
+just polling the stream will make sure the connection is kept until the handshake is finished. When the stream
+returns `None`, you're good to drop it.
 
+If you want to initiate the close, call close on the sink. From then on, the situation is identical to above.
+Just poll the stream until it returns None and you're good to go.
 
-### Scenarios
+Tungstenite will return None on the client only when the server closes the underlying connection, so it will
+make sure you respect the websocket protocol.
 
+If you initiate the close handshake, you might want to race a timeout and drop the connection if the remote
+endpoint doesn't finish the close handshake in a timely manner. See the close.rs example in [examples directory of the repository](https://github.com/najamelan/ws_stream_tungstenite/tree/master/examples) for how to do that.
 
-#### tokio-tungstenite server on TCP
-
-**Note**: tokio-tungstenite is currently on still on futures 0.1.
-
-You can use [TungWebSocket::listen](crate::providers::TungWebSocket::listen) if you just want TCP.
-
-Please have a look at the [echo example](https://github.com/najamelan/ws_stream_tungstenite/tree/master/examples/echo.rs) for example code.
-
-Listen returns an [Incoming] which yields [Handshake] which in turn will resolve when the Websocket handshake is complete.
-
-#### tokio-tungstenite server on other streams
-
-You can listen for incoming connections yourself and create a [TungWebSocket](crate::providers::TungWebSocket) over any stream that implements AsyncRead01/AsyncWrite01.
-
-TODO: example
-
-#### tokio-tungstenite server over tls
-
-
-#### warp server
-
-#### warp server over https
-
-#### tokio-tungstenite client
-
-#### tokio-tungstenite client over tls
-
-
-### Closing the connection
-
-Neither tokio-tungstenite nor warp support closing with a reason and close code. The way to implement it would be to create a tungstenite Message and send that, but that won't work on warp. Thus, I haven't bothered to implement this functionality yet.
-
-Closing without reason and code is as simple as calling close on the Sink.
-
-Note that when you use stream combinators, eg. to make an echo server:
-```rust
-match stream.forward( sink ).await
-{
-	...
-}
-```
-This will return an error when the client closes the connection. The forward combinator will find the stream returning None, and will thus try to close the Sink, but since that's the same connection, it's already closed. This will return `std::io::ErrorKind::NotConnected`.
 
 ### Error handling
 
+_ws_stream_tungstenite_ is about AsyncRead/Write, so we only accept binary messages. If we receive a websocket text message,
+that's considered a protocol error.
+
+For detailed instructions, please have a look at the API docs for [`WsStream`]. Especially at the impls for AsyncRead/Write, which detail all possible errors you can get.
 
 
 ### Limitations
 
-- no convenient support for closing with reason and code (see above)
-- only tokio-tungstenite and warp backends supported for now
+- no convenient support for closing with reason and code.
 
 
-## API
+### API
 
 Api documentation can be found on [docs.rs](https://docs.rs/ws_stream_tungstenite).
 
 
 ## References
 The reference documents for understanding websockets and how the browser handles them are:
-- [HTML Living Standard](https://html.spec.whatwg.org/multipage/web-sockets.html)
 - [RFC 6455 - The WebSocket Protocol](https://tools.ietf.org/html/rfc6455)
 - security of ws: https://blog.securityevaluators.com/websockets-not-bound-by-cors-does-this-mean-2e7819374acc?gi=e4a712f5f982
 - another: https://www.christian-schneider.net/CrossSiteWebSocketHijacking.html
@@ -162,23 +186,8 @@ Please file PR's against the `dev` branch, don't forget to update the changelog 
 
 ### Testing
 
-tests/certs has an https certificate for the domain ws.stream. This is required for the ssl integration tests. After running the tests, remove the certificates from your system.
+`cargo test`
 
-#### Arch linux
- In arch linux it can be installed to work like:
-```shell
-sudo cp tests/certs/ws.stream.crt /etc/ca-certificates/trust-source/anchors/
-trust extract-compat
-```
-#### Debian/derivatives
-As root:
-```shell
-apt install ca-certificates
-cp tests/certs/ws.stream.crt /usr/local/share/ca-certificates/
-update-ca-certificates
-```
-
-`cargo test --all-features`
 
 ### Code of conduct
 

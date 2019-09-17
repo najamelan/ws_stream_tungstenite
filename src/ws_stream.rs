@@ -1,7 +1,9 @@
 use crate::{ import::*, tung_websocket::TungWebSocket };
 
 
-/// takes a Stream + Sink of websocket messages and implements AsyncRead + AsyncWrite
+/// Takes a WebSocketStream from tokio-tungstenite and implements futures 0.3 AsyncRead/AsyncWrite.
+/// Please look at the documentation of the impls for those traits below for details (rustdoc will
+/// collapse them).
 //
 pub struct WsStream<S: AsyncRead01 + AsyncWrite01>
 {
@@ -44,6 +46,9 @@ impl<S: AsyncRead01 + AsyncWrite01> fmt::Debug for WsStream<S>
 /// ### Errors
 ///
 /// The following errors can be returned when writing to the stream:
+///
+/// - [`io::ErrorKind::NotConnected`]: This means that the connection is already closed. You should
+///   drop it. It is safe to drop the underlying connection.
 ///
 /// - [`io::ErrorKind::InvalidData`]: This means that a tungstenite::error::Capacity occurred. This means that
 ///   you send in a buffer bigger than the maximum message size configured on the underlying websocket connection.
@@ -138,6 +143,24 @@ impl<S: AsyncRead01 + AsyncWrite01> AsyncWrite for WsStream<S>
 
 
 
+/// When None is returned, it means it is safe to drop the underlying connection.
+///
+/// ### Errors
+///
+/// The following errors can be returned from this method:
+///
+/// - [`io::ErrorKind::InvalidData`]: This means that a protocol error was encountered (eg. the remote did something wrong)
+///   Protocol error here means either against the websocket protocol or sending websocket Text messages which don't
+///   make sense for AsyncRead/AsyncWrite. When these happen, we start the close handshake for the connection, notifying
+///   the remote that they made a protocol violation. You should not drop the connection and keep polling this stream
+///   until it returns None. That allows tungstenite to properly handle shutting down the connection.
+///   Until the remote confirms the close, we might still receive incoming data and it will be passed on to you.
+///   In production code you probably want to stop polling this after a timeout if the remote doesn't acknowledge the
+///   close.
+///
+/// - other std::io::Error's generally mean something went wrong on the underlying transport. Consider these fatal
+///   and just drop the connection.
+//
 impl<S: AsyncRead01 + AsyncWrite01> AsyncRead  for WsStream<S>
 {
 	fn poll_read( mut self: Pin<&mut Self>, cx: &mut Context<'_>, buf: &mut [u8] ) -> Poll< io::Result<usize> >

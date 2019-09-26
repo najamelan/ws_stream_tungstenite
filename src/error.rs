@@ -3,23 +3,23 @@ use crate::{ import::* };
 
 /// The error type for errors happening in `ws_stream`.
 ///
-/// Use [`WsErr::kind()`] to know which kind of error happened.
+/// Use [`Error::kind()`] to know which kind of error happened.
 //
 #[ derive( Debug ) ]
 //
-pub struct WsErr
+pub struct Error
 {
-	pub(crate) inner: Option< Box<dyn StdError + Send> >,
-	pub(crate) kind : WsErrKind,
+	pub(crate) inner: Option< Box<dyn ErrorTrait + Send + Sync> >,
+	pub(crate) kind : ErrorKind,
 }
 
 
 
 /// The different kind of errors that can happen when you use the `ws_stream` API.
 //
-#[ derive( Debug ) ]
+#[ derive( Debug, Clone, Copy, Eq, PartialEq ) ]
 //
-pub enum WsErrKind
+pub enum ErrorKind
 {
 	/// This is an error from tokio-tungstenite.
 	//
@@ -33,7 +33,11 @@ pub enum WsErrKind
 
 	/// A tungstenite error.
 	//
-	TungErr,
+	Tungstenite,
+
+	/// A tungstenite error.
+	//
+	Io,
 
 	/// A warp error.
 	//
@@ -43,6 +47,14 @@ pub enum WsErrKind
 	//
 	Protocol,
 
+	/// A websocket protocol error.
+	//
+	ReceivedText,
+
+	/// Trying to work with an object that is closed.
+	//
+	Closed,
+
 	#[ doc( hidden ) ]
 	//
 	__NonExhaustive__
@@ -50,11 +62,11 @@ pub enum WsErrKind
 
 
 
-impl StdError for WsErr
+impl ErrorTrait for Error
 {
-	fn source( &self ) -> Option< &(dyn StdError + 'static) >
+	fn source( &self ) -> Option< &(dyn ErrorTrait + 'static) >
 	{
-		self.inner.as_ref().map( |e| -> &(dyn StdError + 'static)
+		self.inner.as_ref().map( |e| -> &(dyn ErrorTrait + 'static)
 		{
 			e.deref()
 		})
@@ -64,7 +76,7 @@ impl StdError for WsErr
 
 
 
-impl fmt::Display for WsErrKind
+impl fmt::Display for ErrorKind
 {
 	fn fmt( &self, f: &mut fmt::Formatter<'_> ) -> fmt::Result
 	{
@@ -72,9 +84,11 @@ impl fmt::Display for WsErrKind
 		{
 			Self::WsHandshake   => fmt::Display::fmt( "The WebSocket handshake failed.", f ) ,
 			Self::TcpConnection => fmt::Display::fmt( "A tcp connection error happened.", f ) ,
-			Self::TungErr       => fmt::Display::fmt( "A tungstenite error happened.", f ) ,
+			Self::Tungstenite   => fmt::Display::fmt( "A tungstenite error happened.", f ) ,
+			Self::Io            => fmt::Display::fmt( "An io error happened.", f ) ,
 			Self::WarpErr       => fmt::Display::fmt( "WarpErr:", f ) ,
 			Self::Protocol      => fmt::Display::fmt( "The remote committed a websocket protocol violation.", f ) ,
+			Self::ReceivedText  => fmt::Display::fmt( "The remote sent a Text message. Only Binary messages are allowed.", f ) ,
 
 			_ => unreachable!(),
 		}
@@ -82,7 +96,7 @@ impl fmt::Display for WsErrKind
 }
 
 
-impl fmt::Display for WsErr
+impl fmt::Display for Error
 {
 	fn fmt( &self, f: &mut fmt::Formatter<'_> ) -> fmt::Result
 	{
@@ -98,49 +112,63 @@ impl fmt::Display for WsErr
 
 
 
-impl WsErr
+impl Error
 {
 	/// Allows matching on the error kind
 	//
-	pub fn kind( &self ) -> &WsErrKind
+	pub fn kind( &self ) -> &ErrorKind
 	{
 		&self.kind
 	}
 }
 
-impl From<WsErrKind> for WsErr
+impl From<ErrorKind> for Error
 {
-	fn from( kind: WsErrKind ) -> WsErr
+	fn from( kind: ErrorKind ) -> Error
 	{
-		WsErr { inner: None, kind }
+		Error { inner: None, kind }
 	}
 }
 
 
 
-impl From< TungErr > for WsErr
+impl From< TungErr > for Error
 {
-	fn from( inner: TungErr ) -> WsErr
+	fn from( inner: TungErr ) -> Error
 	{
 		let kind = match inner
 		{
-			TungErr::Protocol(_) => WsErrKind::Protocol,
-			_                    => WsErrKind::TungErr ,
+			TungErr::Protocol(_) => ErrorKind::Protocol    ,
+			_                    => ErrorKind::Tungstenite ,
 		};
 
-		WsErr { inner: Some( Box::new( inner ) ), kind }
+		Error { inner: Some( Box::new( inner ) ), kind }
 	}
 }
 
 
-#[cfg( feature = "warp" )]
-//
-impl From< WarpErr > for WsErr
+
+impl From< io::Error > for Error
 {
-	fn from( inner: WarpErr ) -> WsErr
+	fn from( inner: io::Error ) -> Error
 	{
-		WsErr { inner: Some( Box::new( inner ) ), kind: WsErrKind::WarpErr }
+		Error { inner: Some( Box::new( inner ) ), kind: ErrorKind::Io }
 	}
 }
 
+
+
+impl From< pharos::Error > for Error
+{
+	fn from( inner: pharos::Error ) -> Error
+	{
+		let kind = match inner.kind()
+		{
+			pharos::ErrorKind::Closed => ErrorKind::Closed,
+			_                         => unreachable!() ,
+		};
+
+		Error { inner: Some( Box::new( inner ) ), kind }
+	}
+}
 

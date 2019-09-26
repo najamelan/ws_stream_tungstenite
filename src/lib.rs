@@ -26,12 +26,17 @@
 )]
 
 
-mod ws_stream     ;
+mod ws_stream ;
+mod ws_event  ;
+mod error     ;
+
 pub(crate) mod tung_websocket;
 
 pub use
 {
-	self::ws_stream :: * ,
+	self::ws_stream :: { WsStream         } ,
+	self::ws_event  :: { WsEvent          } ,
+	self::error     :: { Error, ErrorKind } ,
 };
 
 
@@ -40,16 +45,16 @@ mod import
 {
 	pub(crate) use
 	{
-		futures_01        :: { stream::{ SplitStream as SplitStream01, SplitSink as SplitSink01, Stream as Stream01 } } ,
-		futures::compat   :: { Compat01As03, Compat01As03Sink                                                         } ,
-		futures           :: { prelude::{ Stream, Sink, AsyncRead, AsyncWrite }, Poll, task::Context, ready           } ,
-		futures           :: { StreamExt, SinkExt, TryStreamExt, stream::{ SplitStream, SplitSink, IntoAsyncRead }    } ,
-		log               :: { trace, debug, error                                                                    } ,
-		std               :: { io::{ self }, pin::Pin, fmt, future::Future, borrow::Cow                               } ,
-		tokio             :: { io::{ AsyncRead as AsyncRead01, AsyncWrite as AsyncWrite01 }                           } ,
-		tokio_tungstenite :: { WebSocketStream as TTungSocket                                                         } ,
+		bitflags          :: { bitflags                                                                                     } ,
+		futures_01        :: { stream::{ SplitStream as SplitStream01, SplitSink as SplitSink01, Stream as Stream01 }       } ,
+		futures::compat   :: { Compat01As03, Compat01As03Sink                                                               } ,
+		futures           :: { prelude::{ Stream, Sink, AsyncRead, AsyncWrite }, Poll, task::Context, ready                 } ,
+		log               :: { trace, debug, error, warn                                                                    } ,
+		std               :: { io::{ self }, pin::Pin, fmt, borrow::Cow, error::Error as ErrorTrait, ops::Deref, collections::VecDeque, sync::Arc             } ,
+		tokio             :: { io::{ AsyncRead as AsyncRead01, AsyncWrite as AsyncWrite01 }                                 } ,
+		tokio_tungstenite :: { WebSocketStream as TTungSocket                                                               } ,
 		tungstenite       :: { Message as TungMessage, Error as TungErr, protocol::{ CloseFrame, frame::coding::CloseCode } } ,
-		pin_utils         :: { pin_mut } ,
+		pharos            :: { Observable, ObserveConfig, Events, Pharos                                                    } ,
 	};
 }
 

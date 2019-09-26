@@ -24,8 +24,9 @@ package:
   categories    : []
 
   metadata:
-    docs.rs:
-      features: [ external_doc ]
+    docs:
+      rs:
+        features: [ external_doc ]
 
 badges:
 
@@ -50,6 +51,9 @@ dependencies:
   tungstenite       : ^0.9
   pin-utils         : ^0.1.0-alpha
   tokio-tungstenite : { version: ^0.9 }
+  bitflags          : ^1
+  pharos            : { path: ../pharos }
+
 
 dev-dependencies:
 
@@ -61,6 +65,10 @@ dev-dependencies:
   futures_ringbuf  : ^0.1
   futures-preview  : { version: ^0.3.0-alpha, features: [async-await, nightly] }
   futures-timer    : ^0.3
+  ringbuf           : ^0.1
+  future-parking_lot: ^0.3.2-alpha
+  assert_matches    : ^1.3
+
 
 profile:
 
@@ -74,4 +82,5 @@ patch:
   crates-io:
 
     futures_codec : { git: "https://github.com/matthunz/futures-codec.git" }
-    tungstenite   : { git: "https://github.com/najamelan/tungstenite-rs"   }
+    tungstenite   : { git: "https://github.com/snapview/tungstenite-rs"   }
+

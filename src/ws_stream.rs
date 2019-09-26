@@ -1,4 +1,4 @@
-use crate::{ import::*, tung_websocket::TungWebSocket };
+use crate::{ import::*, tung_websocket::TungWebSocket, WsEvent, Error };
 
 
 /// Takes a WebSocketStream from tokio-tungstenite and implements futures 0.3 AsyncRead/AsyncWrite.
@@ -7,8 +7,8 @@ use crate::{ import::*, tung_websocket::TungWebSocket };
 //
 pub struct WsStream<S: AsyncRead01 + AsyncWrite01>
 {
-	stream : IntoAsyncRead<SplitStream< TungWebSocket<S> >>,
-	sink   : SplitSink  < TungWebSocket<S>, Vec<u8> > ,
+	inner : TungWebSocket<S>,
+	state : ReadState,
 }
 
 
@@ -18,14 +18,10 @@ impl<S: AsyncRead01 + AsyncWrite01> WsStream<S>
 	//
 	pub fn new( inner: TTungSocket<S> ) -> Self
 	{
-		let ours = TungWebSocket::new( inner );
-
-		let (tx, rx) = ours.split();
-
 		Self
 		{
-			stream: rx.into_async_read(),
-			sink  : tx                  ,
+			inner : TungWebSocket::new( inner ),
+			state : ReadState::PendingChunk
 		}
 	}
 }
@@ -66,7 +62,7 @@ impl<S: AsyncRead01 + AsyncWrite01> AsyncWrite for WsStream<S>
 	{
 		trace!( "{:?}: AsyncWrite - poll_write", self );
 
-		let res = ready!( Pin::new( &mut self.sink ).poll_ready(cx) );
+		let res = ready!( Pin::new( &mut self.inner ).poll_ready(cx) );
 
 		if let Err( e ) = res
 		{
@@ -79,7 +75,7 @@ impl<S: AsyncRead01 + AsyncWrite01> AsyncWrite for WsStream<S>
 		// FIXME: avoid extra copy?
 		// would require a different signature of both AsyncWrite and Tungstenite (Bytes from bytes crate for example)
 		//
-		match Pin::new( &mut self.sink ).start_send( buf.into() )
+		match Pin::new( &mut self.inner ).start_send( buf.into() )
 		{
 			Ok (_) =>
 			{
@@ -101,7 +97,7 @@ impl<S: AsyncRead01 + AsyncWrite01> AsyncWrite for WsStream<S>
 				//
 				// So, flush!
 				//
-				let _ = Pin::new( &mut self.sink ).poll_flush( cx );
+				let _ = Pin::new( &mut self.inner ).poll_flush( cx );
 
 				trace!( "{:?}: AsyncWrite - poll_write, wrote {} bytes", self, buf.len() );
 
@@ -117,7 +113,7 @@ impl<S: AsyncRead01 + AsyncWrite01> AsyncWrite for WsStream<S>
 	{
 		trace!( "{:?}: AsyncWrite - poll_flush", self );
 
-		match ready!( Pin::new( &mut self.sink ).poll_flush(cx) )
+		match ready!( Pin::new( &mut self.inner ).poll_flush(cx) )
 		{
 			Ok (_) => Poll::Ready(Ok ( () )) ,
 			Err(e) => Poll::Ready(Err( e  )) ,
@@ -129,43 +125,98 @@ impl<S: AsyncRead01 + AsyncWrite01> AsyncWrite for WsStream<S>
 	{
 		trace!( "{:?}: AsyncWrite - poll_close", self );
 
-		ready!( Pin::new( &mut self.sink ).poll_close( cx ) )
-
-			.map_err( |e|
-			{
-				error!( "{}", e );
-				e
-			})
-
-			.into()
+		ready!( Pin::new( &mut self.inner ).poll_close( cx ) ).into()
 	}
 }
 
 
+
+
+
+
+#[derive(Debug, Clone)]
+//
+enum ReadState
+{
+	Ready { chunk: Vec<u8>, chunk_start: usize } ,
+	PendingChunk                                 ,
+}
 
 /// When None is returned, it means it is safe to drop the underlying connection.
 ///
 /// ### Errors
 ///
-/// The following errors can be returned from this method:
-///
-/// - [`io::ErrorKind::InvalidData`]: This means that a protocol error was encountered (eg. the remote did something wrong)
-///   Protocol error here means either against the websocket protocol or sending websocket Text messages which don't
-///   make sense for AsyncRead/AsyncWrite. When these happen, we start the close handshake for the connection, notifying
-///   the remote that they made a protocol violation. You should not drop the connection and keep polling this stream
-///   until it returns None. That allows tungstenite to properly handle shutting down the connection.
-///   Until the remote confirms the close, we might still receive incoming data and it will be passed on to you.
-///   In production code you probably want to stop polling this after a timeout if the remote doesn't acknowledge the
-///   close.
-///
-/// - other std::io::Error's generally mean something went wrong on the underlying transport. Consider these fatal
-///   and just drop the connection.
 //
 impl<S: AsyncRead01 + AsyncWrite01> AsyncRead  for WsStream<S>
 {
 	fn poll_read( mut self: Pin<&mut Self>, cx: &mut Context<'_>, buf: &mut [u8] ) -> Poll< io::Result<usize> >
 	{
-		Pin::new( &mut self.stream ).poll_read( cx, buf )
+		trace!( "WsStream: read called" );
+
+		loop { match &mut self.state
+		{
+			ReadState::Ready { chunk, chunk_start } =>
+			{
+				trace!( "io_read: received message" );
+
+				let end = std::cmp::min( *chunk_start + buf.len(), chunk.len() );
+				let len = end - *chunk_start;
+
+				buf[..len].copy_from_slice( &chunk[*chunk_start..end] );
+
+
+				// We read the entire chunk
+				//
+				if chunk.len() == end { self.state = ReadState::PendingChunk }
+				else                  { *chunk_start = end                   }
+
+				trace!( "io_read: return read {}", len );
+
+				return Poll::Ready( Ok(len) );
+			}
+
+
+			ReadState::PendingChunk =>
+			{
+				trace!( "io_read: pending" );
+
+				match ready!( Pin::new( &mut self.inner ).poll_next(cx) )
+				{
+					// We have a message
+					//
+					Some(Ok( chunk )) =>
+					{
+						self.state = ReadState::Ready { chunk, chunk_start: 0 };
+						continue;
+					}
+
+					// The stream has ended
+					//
+					None =>
+					{
+						trace!( "ws_stream: stream has ended" );
+						return Ok(0).into();
+					}
+
+					Some( Err(err) ) =>
+					{
+						error!( "{}", err );
+
+						return Poll::Ready(Err( err ))
+					}
+				}
+			}
+		}}
 	}
 }
 
+
+impl<S> Observable< WsEvent > for WsStream<S> where S: AsyncRead01 + AsyncWrite01
+{
+	type Error = Error;
+
+	fn observe( &mut self, options: ObserveConfig< WsEvent > ) -> Result< Events< WsEvent >, Self::Error >
+	{
+		self.inner.observe( options ).map_err( Into::into )
+	}
+}

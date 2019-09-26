@@ -7,6 +7,7 @@ status = "actively-developed"
 repository = "najamelan/ws_stream_tungstenite"
 
 [dependencies]
+bitflags = "^1"
 log = "^0.4"
 pin-utils = "^0.1.0-alpha"
 tungstenite = "^0.9"
@@ -19,6 +20,9 @@ version = "^0.3.0-alpha"
 package = "futures"
 version = "^0.1"
 
+[dependencies.pharos]
+path = "../pharos"
+
 [dependencies.tokio]
 default-features = false
 features = ["codec"]
@@ -28,11 +32,14 @@ version = "^0.1"
 version = "^0.9"
 
 [dev-dependencies]
+assert_matches = "^1.3"
 flexi_logger = "^0.14"
+future-parking_lot = "^0.3.2-alpha"
 futures-timer = "^0.3"
 futures_codec = "^0.2"
 futures_ringbuf = "^0.1"
 pretty_assertions = "^0.6"
+ringbuf = "^0.1"
 url = "^2"
 
 [dev-dependencies.futures-preview]
@@ -61,7 +68,8 @@ repository = "https://github.com/najamelan/ws_stream_tungstenite"
 version = "0.1.0-alpha.2"
 
 [package.metadata]
-[package.metadata."docs.rs"]
+[package.metadata.docs]
+[package.metadata.docs.rs]
 features = ["external_doc"]
 
 [patch]
@@ -70,7 +78,7 @@ features = ["external_doc"]
 git = "https://github.com/matthunz/futures-codec.git"
 
 [patch.crates-io.tungstenite]
-git = "https://github.com/najamelan/tungstenite-rs"
+git = "https://github.com/snapview/tungstenite-rs"
 
 [profile]
 [profile.release]

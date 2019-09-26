@@ -11,6 +11,7 @@ use
 	tokio_tungstenite     :: { accept_async, connect_async                                                           } ,
 	url                   :: { Url                                                                                   } ,
 	tungstenite           :: { protocol::{ CloseFrame, frame::coding::CloseCode }                                    } ,
+	pharos                :: { ObserveConfig, Observable                                                             } ,
 
 	log           :: { * } ,
 };
@@ -33,14 +34,20 @@ fn send_text()
 
 		let tcp_stream = connections.next().await.expect( "1 connection" ).expect( "tcp connect" );
 		let s          = ok( tcp_stream ).and_then( accept_async ).compat().await.expect( "ws handshake" );
-		let ws         = WsStream::new( s );
+		let mut ws     = WsStream::new( s );
+		let mut events = ws.observe( ObserveConfig::default() ).expect( "observe server" );
 
 		let mut framed = Framed::new( ws, LinesCodec {} );
 
-		let res = framed.next().await.transpose();
+		let res = framed.next().await;
 
-		assert!( res.is_err() );
-		assert_eq!( std::io::ErrorKind::InvalidData, res.unwrap_err().kind() );
+		assert!( res.is_none() );
+
+		match events.next().await.expect( "protocol error" )
+		{
+			WsEvent::Error( e ) => assert_eq!( &ErrorKind::ReceivedText, e.kind() ),
+			evt                 => assert!( false, "{:?}", evt ),
+		}
 
 		assert_eq!( None, framed.next().await.transpose().expect( "receive close stream" ) );
 	};
@@ -60,7 +67,7 @@ fn send_text()
 		let frame = CloseFrame
 		{
 			code  : CloseCode::Unsupported,
-			reason: "Text messages are not supported".into(),
+			reason: "Text messages are not supported.".into(),
 		};
 
 		assert_eq!( Some( tungstenite::Message::Close( Some(frame) )), socket.next().await.transpose().expect( "close" ) );

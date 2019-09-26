@@ -3,7 +3,7 @@
 use
 {
 	ws_stream_tungstenite :: { *                                                                              } ,
-	futures               :: { StreamExt, SinkExt, executor::LocalPool, task::LocalSpawnExt, compat::Sink01CompatExt } ,
+	futures               :: { StreamExt, SinkExt, executor::block_on, future::join, compat::Sink01CompatExt  } ,
 	futures_codec         :: { LinesCodec, Framed                                                             } ,
 	tokio                 :: { net::{ TcpListener }                                                           } ,
 	futures::compat       :: { Future01CompatExt, Stream01CompatExt                                           } ,
@@ -11,6 +11,7 @@ use
 	tokio_tungstenite     :: { accept_async, connect_async                                                    } ,
 	url                   :: { Url                                                                            } ,
 	tungstenite           :: { protocol::{ CloseFrame, frame::coding::CloseCode }                             } ,
+	pharos                :: { Observable, ObserveConfig                                                      } ,
 
 	log           :: { * } ,
 };
@@ -22,9 +23,6 @@ fn protocol_error()
 {
 	// flexi_logger::Logger::with_str( "ping_pong=trace, tungstenite=trace, tokio_tungstenite=trace, ws_stream_tungstenite=trace, tokio=warn" ).start().expect( "flexi_logger");
 
-	let mut pool     = LocalPool::new();
-	let mut spawner  = pool.spawner();
-
 
 	let server = async
 	{
@@ -33,16 +31,18 @@ fn protocol_error()
 
 		let tcp_stream = connections.next().await.expect( "1 connection" ).expect( "tcp connect" );
 		let s          = ok( tcp_stream ).and_then( accept_async ).compat().await.expect( "ws handshake" );
-		let ws         = WsStream::new( s );
-
+		let mut ws     = WsStream::new( s );
+		let mut events = ws.observe( ObserveConfig::default() ).expect( "observe" );
 		let mut framed = Framed::new( ws, LinesCodec {} );
 
-		let res = framed.next().await.transpose();
 
-		assert!( res.is_err() );
-		assert_eq!( std::io::ErrorKind::InvalidData, res.unwrap_err().kind() );
+		assert!( framed.next().await.is_none() );
 
-		assert_eq!( None, framed.next().await.transpose().expect( "receive close stream" ) );
+		match events.next().await.expect( "protocol error" )
+		{
+			WsEvent::Error( e ) => assert_eq!( &ErrorKind::Protocol, e.kind() ),
+			evt                 => assert!( false, "{:?}", evt ),
+		}
 	};
 
 
@@ -68,9 +68,6 @@ fn protocol_error()
 		trace!( "drop websocket" );
 	};
 
-	spawner.spawn_local( server ).expect( "spawn server" );
-	spawner.spawn_local( client ).expect( "spawn client" );
-
-	pool.run();
+	block_on( join( server, client ) );
 }
 

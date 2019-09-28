@@ -10,11 +10,11 @@ use
 	futures_01            :: { Async, stream::Stream, task::{ self, Task }                                              } ,
 	tokio_tungstenite     :: { WebSocketStream                                                                          } ,
 	tungstenite           :: { protocol::{ WebSocketConfig, CloseFrame, frame::coding::CloseCode, Role }, Message       } ,
-	std                   :: { io, sync::Arc, fmt                                                                       } ,
+	std                   :: { io, sync::Arc, sync::Mutex                                                               } ,
 	ringbuf               :: { RingBuffer, Producer, Consumer                                                           } ,
-	pharos                :: { Filter, Pharos, Observable, ObserveConfig, Events                                        } ,
-	future_parking_lot    :: { mutex::{ Mutex, FutureLockable }                                                         } ,
-	assert_matches        :: { assert_matches                                                                                    } ,
+	pharos                :: { Observable, ObserveConfig, Events                                                        } ,
+	assert_matches        :: { assert_matches                                                                           } ,
+	async_progress        :: { Progress                                                                                 } ,
 
 	log           :: { * } ,
 };
@@ -24,7 +24,7 @@ use
 // tries to initiate a close handshake while the send queue from tungstenite is full. Eg, does the handshake
 // continue when that send queue opens up.
 //
-// Steps:
+// Progress:
 //
 // server fills it's send queue
 // client sends a text message (which is protocol error)
@@ -39,11 +39,11 @@ fn send_text_backpressure()
 
 	let (sc, cs) = Endpoint::pair( 37, 22 );
 
-	let steps       = Steps::new( Progress::Start      );
-	let fill_queue  = steps.wait( Progress::FillQueue  );
-	let send_text   = steps.wait( Progress::SendText   );
-	let read_text   = steps.wait( Progress::ReadText   );
-	let client_read = steps.wait( Progress::ClientRead );
+	let steps       = Progress::new( Step::Start      );
+	let fill_queue  = steps.wait( Step::FillQueue  );
+	let send_text   = steps.wait( Step::SendText   );
+	let read_text   = steps.wait( Step::ReadText   );
+	let client_read = steps.wait( Step::ClientRead );
 
 
 	let server = server( fill_queue, read_text  , steps.clone(), sc );
@@ -51,19 +51,18 @@ fn send_text_backpressure()
 
 
 	info!( "start test" );
-	let start = steps.set_state( Progress::FillQueue );
+	let start = steps.set_state( Step::FillQueue );
 
 	block_on( join3( server, client, start ) );
 	info!( "end test" );
-
 }
 
 
 async fn server
 (
-	mut fill_queue: Events<Progress> ,
-	mut read_text : Events<Progress> ,
-	    steps     : Steps<Progress>  ,
+	mut fill_queue: Events<Step> ,
+	mut read_text : Events<Step> ,
+	    steps     : Progress<Step>  ,
 	    sc        : Endpoint         ,
 )
 {
@@ -91,7 +90,7 @@ async fn server
 
 		// The next step will block, so set progress
 		//
-		steps.set_state( Progress::SendText ).await;
+		steps.set_state( Step::SendText ).await;
 
 		sink.send( "ho\n".to_string() ).await.expect( "Send second line" );
 
@@ -106,7 +105,7 @@ async fn server
 
 		// The next step will block, so set progress
 		//
-		steps.set_state( Progress::ClientRead ).await;
+		steps.set_state( Step::ClientRead ).await;
 
 		warn!( "read the text on server, should return None" );
 
@@ -136,9 +135,9 @@ async fn server
 
 async fn client
 (
-	mut send_text   : Events<Progress>,
-	mut client_read : Events<Progress>,
-	    steps       : Steps<Progress> ,
+	mut send_text   : Events<Step>,
+	mut client_read : Events<Step>,
+	    steps       : Progress<Step> ,
 	    cs          : Endpoint        ,
 )
 {
@@ -158,7 +157,7 @@ async fn client
 	send_text.next().await;
 	sink.send( tungstenite::Message::Text( "Text from client".to_string() ) ).await.expect( "send text" );
 
-	steps.set_state( Progress::ReadText ).await;
+	steps.set_state( Step::ReadText ).await;
 
 	info!( "wait for client_read" );
 	client_read.next().await;
@@ -196,18 +195,18 @@ async fn client
 
 pub struct Endpoint
 {
-	name        : &'static str               ,
+	name        : &'static str                  ,
 
-	writer      : Producer<u8>               ,
-	reader      : Consumer<u8>               ,
+	writer      : Producer<u8>                  ,
+	reader      : Consumer<u8>                  ,
 
 	own_rtask   : Arc<Mutex< Option<Task> >> ,
 	other_rtask : Arc<Mutex< Option<Task> >> ,
 	own_wtask   : Arc<Mutex< Option<Task> >> ,
 	other_wtask : Arc<Mutex< Option<Task> >> ,
 
-	own_open    : Arc<Mutex< bool >> ,
-	other_open  : Arc<Mutex< bool >> ,
+	own_open    : Arc<Mutex< bool >>         ,
+	other_open  : Arc<Mutex< bool >>         ,
 
 }
 
@@ -272,7 +271,7 @@ impl io::Read for Endpoint
 {
 	fn read( &mut self, buf: &mut [u8] ) -> io::Result<usize>
 	{
-		if !*self.own_open.lock()
+		if !*self.own_open.lock().expect( "lock" )
 		{
 			return Ok(0);
 		}
@@ -292,14 +291,14 @@ impl io::Read for Endpoint
 				{
 					io::ErrorKind::WouldBlock =>
 					{
-						if !*self.other_open.lock()
+						if !*self.other_open.lock().expect( "lock" )
 						{
 							return Ok(0);
 						}
 
 						trace!( "{} - read: wouldblock", self.name );
 
-						let mut own_rtask = self.own_rtask.lock();
+						let mut own_rtask = self.own_rtask.lock().expect( "lock" );
 
 						if own_rtask.is_some()
 						{
@@ -316,7 +315,7 @@ impl io::Read for Endpoint
 			}
 		};
 
-		if let Some( t ) = self.other_wtask.lock().take()
+		if let Some( t ) = self.other_wtask.lock().expect( "lock" ).take()
 		{
 			trace!( "{} - read: waking up writer", self.name );
 			t.notify();
@@ -337,7 +336,7 @@ impl io::Write for Endpoint
 {
 	fn write( &mut self, buf: &[u8] ) -> io::Result<usize>
 	{
-		if !*self.other_open.lock() || !*self.own_open.lock()
+		if !*self.other_open.lock().expect( "lock" ) || !*self.own_open.lock().expect( "lock" )
 		{
 			return Ok(0);
 		}
@@ -359,7 +358,7 @@ impl io::Write for Endpoint
 					{
 						trace!( "{} - write: wouldblock", self.name );
 
-						let mut own_wtask = self.own_wtask.lock();
+						let mut own_wtask = self.own_wtask.lock().expect( "lock" );
 
 						if own_wtask.is_some()
 						{
@@ -375,7 +374,7 @@ impl io::Write for Endpoint
 			}
 		};
 
-		if let Some( t ) = self.other_rtask.lock().take()
+		if let Some( t ) = self.other_rtask.lock().expect( "lock" ).take()
 		{
 			trace!( "{} - write: waking up reader", self.name );
 			t.notify();
@@ -409,7 +408,7 @@ impl io::Write for Endpoint
 					{
 						trace!( "{} - flush: wouldblock", self.name );
 
-						let mut own_wtask = self.own_wtask.lock();
+						let mut own_wtask = self.own_wtask.lock().expect( "lock" );
 
 						if own_wtask.is_some()
 						{
@@ -425,7 +424,7 @@ impl io::Write for Endpoint
 			}
 		};
 
-		if let Some( t ) = self.other_rtask.lock().take()
+		if let Some( t ) = self.other_rtask.lock().expect( "lock" ).take()
 		{
 			trace!( "{} - flush: waking up reader", self.name );
 			t.notify();
@@ -447,18 +446,18 @@ impl Drop for Endpoint
 	{
 		warn!( "{} - drop endpoint", self.name );
 
-		*self.own_open.lock() = false;
+		*self.own_open.lock().expect( "lock" ) = false;
 
 		// The other task might still have it's consumer, so the ringbuffer
 		// will wtill be around. Therefor, make sure tasks wake up, so the notice we are closed.
 		//
-		if let Some( t ) = self.other_rtask.lock().take()
+		if let Some( t ) = self.other_rtask.lock().expect( "lock" ).take()
 		{
 			warn!( "{} - flush: waking up reader", self.name );
 			t.notify();
 		}
 
-		if let Some( t ) = self.other_wtask.lock().take()
+		if let Some( t ) = self.other_wtask.lock().expect( "lock" ).take()
 		{
 			warn!( "{} - flush: waking up reader", self.name );
 			t.notify();
@@ -474,9 +473,9 @@ impl AsyncWrite01 for Endpoint
 {
 	fn shutdown( &mut self ) -> io::Result< Async<()> >
 	{
-		*self.own_open.lock() = false;
+		*self.own_open.lock().expect( "lock" ) = false;
 
-		if let Some( t ) = self.other_rtask.lock().take()
+		if let Some( t ) = self.other_rtask.lock().expect( "lock" ).take()
 		{
 			warn!( "{} - shutdown, waking up reader", self.name );
 			t.notify();
@@ -487,7 +486,7 @@ impl AsyncWrite01 for Endpoint
 }
 
 
-// Steps:
+// Progress:
 //
 // server fills it's send queue
 // client sends a text message (which is protocol error)
@@ -496,60 +495,11 @@ impl AsyncWrite01 for Endpoint
 //
 #[ derive( Debug, Clone, PartialEq, Eq )]
 //
-enum Progress
+enum Step
 {
 	Start,
 	FillQueue,
 	SendText,
 	ReadText,
 	ClientRead,
-}
-
-
-#[ derive( Clone ) ]
-//
-pub struct Steps<State> where State: 'static + Clone + Send + Sync + Eq + fmt::Debug
-{
-	state : Arc<Mutex<State        >>,
-	pharos: Arc<Mutex<Pharos<State>>>,
-}
-
-impl<State> Steps<State> where State: 'static + Clone + Send + Sync + Eq + fmt::Debug
-{
-	pub fn new( state: State ) -> Self
-	{
-		Self
-		{
-			state : Arc::new( Mutex::new( state             )) ,
-			pharos: Arc::new( Mutex::new( Pharos::default() )) ,
-		}
-	}
-
-	pub async fn set_state( &self, new_state: State )
-	{
-		let mut pharos = self.pharos.future_lock().await;
-		let mut state  = self.state .future_lock().await;
-
-		warn!( "Set state to: {:?}", new_state );
-
-		pharos.send( new_state.clone() ).await.expect( "notify" );
-		*state = new_state;
-	}
-
-
-	fn wait( &self, state: State ) -> Events<State>
-	{
-		self.pharos.lock().observe( Filter::Closure( Box::new( move |s| s == &state ) ).into() ).expect( "observe" )
-	}
-}
-
-
-impl<State> Observable<State> for Steps<State> where State: 'static + Clone + Send + Sync + Eq + fmt::Debug
-{
-	type Error = pharos::Error;
-
-	fn observe( &mut self, options: ObserveConfig<State> ) -> Result< Events<State>, Self::Error >
-	{
-		self.pharos.lock().observe( options )
-	}
 }

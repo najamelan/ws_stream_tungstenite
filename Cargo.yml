@@ -44,7 +44,7 @@ features:
 
 dependencies:
 
-  futures-preview   : { version: ^0.3.0-alpha, features: [io-compat, compat] }
+  futures-preview   : { version: 0.3.0-alpha, features: [io-compat, compat] }
   futures_01        : { version: ^0.1, package: futures }
   log               : ^0.4
   tokio             : { version: ^0.1, default-features: false, features: [codec] }
@@ -52,22 +52,22 @@ dependencies:
   pin-utils         : ^0.1.0-alpha
   tokio-tungstenite : { version: ^0.9 }
   bitflags          : ^1
-  pharos            : { path: ../pharos }
+  pharos            : ^0.4
 
 
 dev-dependencies:
 
   pretty_assertions: ^0.6
-  futures_codec    : ^0.2
+  futures_codec    : ^0.3
   flexi_logger     : ^0.14
   tokio-executor   : { version: ^0.1 }
   url              : ^2
   futures_ringbuf  : ^0.1
-  futures-preview  : { version: ^0.3.0-alpha, features: [async-await, nightly] }
+  futures-preview  : { version: ^0.3.0-alpha, features: [async-await] }
   futures-timer    : ^0.3
   ringbuf           : ^0.1
-  future-parking_lot: ^0.3.2-alpha
   assert_matches    : ^1.3
+  async_progress    : { path: ../async_progress }
 
 
 profile:
@@ -81,6 +81,5 @@ patch:
 
   crates-io:
 
-    futures_codec : { git: "https://github.com/matthunz/futures-codec.git" }
     tungstenite   : { git: "https://github.com/snapview/tungstenite-rs"   }
 

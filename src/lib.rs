@@ -56,5 +56,16 @@ mod import
 		tungstenite       :: { Message as TungMessage, Error as TungErr, protocol::{ CloseFrame, frame::coding::CloseCode } } ,
 		pharos            :: { Observable, ObserveConfig, Events, Pharos                                                    } ,
 	};
+
+
+	#[ cfg( test ) ]
+	//
+	pub(crate) use
+	{
+		futures        :: { executor::block_on, StreamExt } ,
+		futures_test   :: { task::noop_waker              } ,
+		pharos         :: { Channel                       } ,
+		assert_matches :: { assert_matches                } ,
+	};
 }
 

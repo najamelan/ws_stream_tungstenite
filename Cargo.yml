@@ -57,17 +57,18 @@ dependencies:
 
 dev-dependencies:
 
-  pretty_assertions: ^0.6
-  futures_codec    : ^0.3
-  flexi_logger     : ^0.14
-  tokio-executor   : { version: ^0.1 }
-  url              : ^2
-  futures_ringbuf  : ^0.1
-  futures-preview  : { version: ^0.3.0-alpha, features: [async-await] }
-  futures-timer    : ^0.3
-  ringbuf           : ^0.1
-  assert_matches    : ^1.3
-  async_progress    : { path: ../async_progress }
+  assert_matches      : ^1.3
+  async_progress      : { path: ../async_progress }
+  flexi_logger        : ^0.14
+  futures-preview     : { version: ^0.3.0-alpha, features: [async-await] }
+  futures-test-preview: ^0.3.0-alpha
+  futures-timer       : ^0.3
+  futures_codec       : ^0.3
+  futures_ringbuf     : ^0.1
+  pretty_assertions   : ^0.6
+  ringbuf             : ^0.1
+  tokio-executor      : { version: ^0.1 }
+  url                 : ^2
 
 
 profile:

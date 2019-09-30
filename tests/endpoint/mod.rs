@@ -1,32 +1,29 @@
-
-// Verify the correct error is returned when sending a text message.
-//
 use
 {
-	tokio                 :: { io::{ AsyncRead as AsyncRead01, AsyncWrite as AsyncWrite01 } } ,
-	futures_01            :: { Async, task::{ self, Task }                                  } ,
-	std                   :: { io, sync::Arc, sync::Mutex                                   } ,
-	ringbuf               :: { RingBuffer, Producer, Consumer                               } ,
-
-	log           :: { * } ,
+	std        :: { io, fmt, sync::{ Arc, Mutex, atomic::{ AtomicBool, Ordering::SeqCst } } } ,
+	futures_01 :: { Async, task::{ self, Task as Task01 }                                   } ,
+	ringbuf    :: { RingBuffer, Producer, Consumer                                          } ,
+	tokio      :: { io::{ AsyncRead as AsyncRead01, AsyncWrite as AsyncWrite01 }            } ,
+	log        :: { *                                                                       } ,
 };
 
 
+// A mock duplex network stream implementing tokio_01::AsyncRead/Write
+//
 pub struct Endpoint
 {
-	name        : &'static str                  ,
+	name        : &'static str                 ,
 
-	writer      : Producer<u8>                  ,
-	reader      : Consumer<u8>                  ,
+	writer      : Producer<u8>                 ,
+	reader      : Consumer<u8>                 ,
 
-	own_rtask   : Arc<Mutex< Option<Task> >> ,
-	other_rtask : Arc<Mutex< Option<Task> >> ,
-	own_wtask   : Arc<Mutex< Option<Task> >> ,
-	other_wtask : Arc<Mutex< Option<Task> >> ,
+	own_rtask   : Arc<Mutex< Option<Task01> >> ,
+	other_rtask : Arc<Mutex< Option<Task01> >> ,
+	own_wtask   : Arc<Mutex< Option<Task01> >> ,
+	other_wtask : Arc<Mutex< Option<Task01> >> ,
 
-	own_open    : Arc<Mutex< bool >>         ,
-	other_open  : Arc<Mutex< bool >>         ,
-
+	own_open    : Arc<AtomicBool>              ,
+	other_open  : Arc<AtomicBool>              ,
 }
 
 
@@ -45,12 +42,11 @@ impl Endpoint
 
 		let a_rtask = Arc::new(Mutex::new( None ));
 		let a_wtask = Arc::new(Mutex::new( None ));
-
 		let b_rtask = Arc::new(Mutex::new( None ));
 		let b_wtask = Arc::new(Mutex::new( None ));
 
-		let a_open  = Arc::new(Mutex::new( true ));
-		let b_open  = Arc::new(Mutex::new( true ));
+		let a_open  = Arc::new(AtomicBool::new( true ));
+		let b_open  = Arc::new(AtomicBool::new( true ));
 
 		(
 			Endpoint
@@ -69,16 +65,16 @@ impl Endpoint
 
 			Endpoint
 			{
-				name        : "B_Client" ,
-				writer      : ba_writer  ,
-				reader      : ab_reader  ,
-				own_rtask   : b_rtask    ,
-				other_rtask : a_rtask    ,
-				own_wtask   : b_wtask    ,
-				other_wtask : a_wtask    ,
+				name        : "B_Client"     ,
+				writer      : ba_writer      ,
+				reader      : ab_reader      ,
+				own_rtask   : b_rtask        ,
+				other_rtask : a_rtask        ,
+				own_wtask   : b_wtask        ,
+				other_wtask : a_wtask        ,
 
-				own_open    : b_open.clone()  ,
-				other_open  : a_open.clone()  ,
+				own_open    : b_open.clone() ,
+				other_open  : a_open.clone() ,
 			}
 		)
 	}
@@ -90,7 +86,7 @@ impl io::Read for Endpoint
 {
 	fn read( &mut self, buf: &mut [u8] ) -> io::Result<usize>
 	{
-		if !*self.own_open.lock().expect( "lock" )
+		if !self.own_open.load( SeqCst )
 		{
 			return Ok(0);
 		}
@@ -110,7 +106,7 @@ impl io::Read for Endpoint
 				{
 					io::ErrorKind::WouldBlock =>
 					{
-						if !*self.other_open.lock().expect( "lock" )
+						if !self.other_open.load( SeqCst )
 						{
 							return Ok(0);
 						}
@@ -130,7 +126,6 @@ impl io::Read for Endpoint
 
 					_ => Err( e )
 				}
-
 			}
 		};
 
@@ -155,7 +150,8 @@ impl io::Write for Endpoint
 {
 	fn write( &mut self, buf: &[u8] ) -> io::Result<usize>
 	{
-		if !*self.other_open.lock().expect( "lock" ) || !*self.own_open.lock().expect( "lock" )
+		if !self.  own_open.load( SeqCst )
+		|| !self.other_open.load( SeqCst )
 		{
 			return Ok(0);
 		}
@@ -265,7 +261,7 @@ impl Drop for Endpoint
 	{
 		warn!( "{} - drop endpoint", self.name );
 
-		*self.own_open.lock().expect( "lock" ) = false;
+		self.own_open.store( false, SeqCst );
 
 		// The other task might still have it's consumer, so the ringbuffer
 		// will wtill be around. Therefor, make sure tasks wake up, so the notice we are closed.
@@ -292,7 +288,7 @@ impl AsyncWrite01 for Endpoint
 {
 	fn shutdown( &mut self ) -> io::Result< Async<()> >
 	{
-		*self.own_open.lock().expect( "lock" ) = false;
+		self.own_open.store( false, SeqCst );
 
 		if let Some( t ) = self.other_rtask.lock().expect( "lock" ).take()
 		{
@@ -301,5 +297,14 @@ impl AsyncWrite01 for Endpoint
 		}
 
 		Ok( ().into() )
+	}
+}
+
+
+impl fmt::Debug for Endpoint
+{
+	fn fmt( &self, f: &mut fmt::Formatter<'_> ) -> fmt::Result
+	{
+		write!( f, "Endpoint01 {}", self.name )
 	}
 }

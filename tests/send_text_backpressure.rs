@@ -6,13 +6,14 @@ use endpoint::Endpoint;
 use
 {
 	ws_stream_tungstenite :: { *                                                                                        } ,
+	std                   :: { future::Future                                                                           } ,
 	futures               :: { StreamExt, SinkExt, executor::block_on, future::{ join, join3 }, compat::Sink01CompatExt } ,
 	futures_codec         :: { LinesCodec, Framed                                                                       } ,
 	futures::compat       :: { Stream01CompatExt                                                                        } ,
 	futures_01            :: { stream::Stream                                                                           } ,
 	tokio_tungstenite     :: { WebSocketStream                                                                          } ,
 	tungstenite           :: { protocol::{ WebSocketConfig, CloseFrame, frame::coding::CloseCode, Role }, Message       } ,
-	pharos                :: { Observable, ObserveConfig, Events                                                        } ,
+	pharos                :: { Observable, ObserveConfig                                                                } ,
 	assert_matches        :: { assert_matches                                                                           } ,
 	async_progress        :: { Progress                                                                                 } ,
 
@@ -39,11 +40,11 @@ fn send_text_backpressure()
 
 	let (sc, cs) = Endpoint::pair( 37, 22 );
 
-	let steps       = Progress::new( Step::Start      );
-	let fill_queue  = steps.wait( Step::FillQueue  );
-	let send_text   = steps.wait( Step::SendText   );
-	let read_text   = steps.wait( Step::ReadText   );
-	let client_read = steps.wait( Step::ClientRead );
+	let steps       = Progress::new( Step::Start   );
+	let fill_queue  = steps.once( Step::FillQueue  );
+	let send_text   = steps.once( Step::SendText   );
+	let read_text   = steps.once( Step::ReadText   );
+	let client_read = steps.once( Step::ClientRead );
 
 
 	let server = server( fill_queue, read_text  , steps.clone(), sc );
@@ -60,10 +61,10 @@ fn send_text_backpressure()
 
 async fn server
 (
-	mut fill_queue: Events<Step> ,
-	mut read_text : Events<Step> ,
-	    steps     : Progress<Step>  ,
-	    sc        : Endpoint         ,
+	fill_queue: impl Future    ,
+	read_text : impl Future    ,
+	steps     : Progress<Step> ,
+	sc        : Endpoint       ,
 )
 {
 	let conf = WebSocketConfig
@@ -82,7 +83,7 @@ async fn server
 	let writer = async
 	{
 		info!( "wait for fill_queue" );
-		fill_queue.next().await;
+		fill_queue.await;
 		info!( "start sending first message" );
 
 		sink.send( "hi this is like 35 characters long\n".to_string() ).await.expect( "Send first line" );
@@ -101,7 +102,7 @@ async fn server
 	let reader = async
 	{
 		info!( "wait for read_text" );
-		read_text.next().await;
+		read_text.await;
 
 		// The next step will block, so set progress
 		//
@@ -135,10 +136,10 @@ async fn server
 
 async fn client
 (
-	mut send_text   : Events<Step>,
-	mut client_read : Events<Step>,
-	    steps       : Progress<Step> ,
-	    cs          : Endpoint        ,
+	send_text   : impl Future    ,
+	client_read : impl Future    ,
+	steps       : Progress<Step> ,
+	cs          : Endpoint       ,
 )
 {
 	let conf = WebSocketConfig
@@ -154,13 +155,13 @@ async fn client
 	let mut stream = stream.compat();
 
 	info!( "wait for send_text" );
-	send_text.next().await;
+	send_text.await;
 	sink.send( tungstenite::Message::Text( "Text from client".to_string() ) ).await.expect( "send text" );
 
 	steps.set_state( Step::ReadText ).await;
 
 	info!( "wait for client_read" );
-	client_read.next().await;
+	client_read.await;
 
 	let test = stream.next().await.unwrap().unwrap();
 	assert_matches!( test, Message::Binary(_) );

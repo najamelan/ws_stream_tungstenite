@@ -36,10 +36,12 @@ bitflags!
 	/// However when progress can be made these will wake up the task and it's our user facing methods
 	/// that get called first. This state allows tracking which of are in progress and need to be resumed.
 	//
-	struct PendingTask: u8
+	struct Flag: u8
 	{
-		const NOTIFIER = 0x01;
-		const CLOSER   = 0x10;
+		const NOTIFIER_PEND = 0x01;
+		const CLOSER_PEND   = 0x02;
+		const PHAROS_CLOSED = 0x04;
+		const SINK_CLOSED   = 0x08;
 	}
 }
 
@@ -64,13 +66,10 @@ pub(crate) struct TungWebSocket<S: AsyncRead01 + AsyncWrite01>
 	sink  : Compat01As03Sink< SplitSink01  < TTungSocket<S> >, TungMessage > ,
 	stream: Compat01As03    < SplitStream01< TTungSocket<S> >              > ,
 
-	state     : State       ,
-	task_state: PendingTask ,
-	notifier  : Notifier    ,
-	closer    : Closer      ,
-
-	pharos_closed: bool,
-	sink_closed  : bool,
+	state     : State    ,
+	flag      : Flag     ,
+	notifier  : Notifier ,
+	closer    : Closer   ,
 }
 
 
@@ -84,16 +83,13 @@ impl<S> TungWebSocket<S> where S: AsyncRead01 + AsyncWrite01
 
 		Self
 		{
-			stream        : Compat01As03    ::new( rx ) ,
-			sink          : Compat01As03Sink::new( tx ) ,
+			stream   : Compat01As03    ::new( rx ) ,
+			sink     : Compat01As03Sink::new( tx ) ,
 
-			state         : State::Ready                ,
-			task_state    : PendingTask::empty()        ,
-			notifier      : Notifier::new()             ,
-			closer        : Closer::new()               ,
-
-			pharos_closed : false                       ,
-			sink_closed   : false                       ,
+			state    : State::Ready                ,
+			flag     : Flag::empty()               ,
+			notifier : Notifier::new()             ,
+			closer   : Closer::new()               ,
 		}
 	}
 
@@ -103,7 +99,7 @@ impl<S> TungWebSocket<S> where S: AsyncRead01 + AsyncWrite01
 	//
 	fn check_notify( mut self: Pin<&mut Self>, cx: &mut Context<'_> ) -> Poll<()>
 	{
-		if !self.task_state.contains( PendingTask::NOTIFIER )
+		if !self.flag.contains( Flag::NOTIFIER_PEND )
 		{
 			return ().into();
 		}
@@ -111,10 +107,10 @@ impl<S> TungWebSocket<S> where S: AsyncRead01 + AsyncWrite01
 		match ready!( self.notifier.run( cx ) )
 		{
 			Ok (_) => {}
-			Err(_) => self.pharos_closed = true,
+			Err(_) => self.flag.insert( Flag::PHAROS_CLOSED ),
 		}
 
-		self.task_state.remove( PendingTask::NOTIFIER );
+		self.flag.remove( Flag::NOTIFIER_PEND );
 
 		().into()
 	}
@@ -124,11 +120,11 @@ impl<S> TungWebSocket<S> where S: AsyncRead01 + AsyncWrite01
 	{
 		// It should only happen if we call close on it, and we should never do that.
 		//
-		debug_assert!( !self.pharos_closed, "If this happens, it's a bug in ws_stream_tungstenite, please report." );
+		debug_assert!( !self.flag.contains( Flag::PHAROS_CLOSED ), "If this happens, it's a bug in ws_stream_tungstenite, please report." );
 
 		self.notifier.queue( evt );
 
-		self.task_state.insert( PendingTask::NOTIFIER );
+		self.flag.insert( Flag::NOTIFIER_PEND );
 	}
 
 
@@ -138,11 +134,11 @@ impl<S> TungWebSocket<S> where S: AsyncRead01 + AsyncWrite01
 	//
 	fn send_closeframe( &mut self, code: CloseCode, reason: Cow<'static, str>, cx: &mut Context<'_> ) -> Poll<()>
 	{
-		self.task_state.insert( PendingTask::CLOSER );
+		self.flag.insert( Flag::CLOSER_PEND );
 
 		// As soon as we are closing, accept no more messages for writing.
 		//
-		self.sink_closed = true;
+		self.flag.insert( Flag::SINK_CLOSED );
 
 		// TODO: check for connection closed, sink errors, etc
 
@@ -150,10 +146,10 @@ impl<S> TungWebSocket<S> where S: AsyncRead01 + AsyncWrite01
 
 		if ready!( Pin::new( &mut self.closer ).run( &mut self.sink, &mut self.notifier, cx) ).is_err()
 		{
-			self.sink_closed = true;
+			self.flag.insert( Flag::SINK_CLOSED );
 		}
 
-		self.task_state.remove( PendingTask::CLOSER );
+		self.flag.remove( Flag::CLOSER_PEND );
 
 		Pin::new( self ).check_notify( cx )
 	}
@@ -164,7 +160,7 @@ impl<S> TungWebSocket<S> where S: AsyncRead01 + AsyncWrite01
 	//
 	fn check_closer( &mut self, cx: &mut Context<'_> ) -> Poll<()>
 	{
-		if !self.task_state.contains( PendingTask::CLOSER )
+		if !self.flag.contains( Flag::CLOSER_PEND )
 		{
 			return ().into();
 		}
@@ -172,11 +168,11 @@ impl<S> TungWebSocket<S> where S: AsyncRead01 + AsyncWrite01
 
 		if ready!( Pin::new( &mut self.closer ).run( &mut self.sink, &mut self.notifier, cx) ).is_err()
 		{
-			self.sink_closed = true;
+			self.flag.insert( Flag::SINK_CLOSED );
 		}
 
 
-		self.task_state.remove( PendingTask::CLOSER );
+		self.flag.remove( Flag::CLOSER_PEND );
 
 		().into()
 	}
@@ -250,7 +246,7 @@ impl<S: AsyncRead01 + AsyncWrite01> Stream for TungWebSocket<S>
 
 				// if tungstenite is returning None here, we should no longer try to send a pending close frame.
 				//
-				self.task_state.remove( PendingTask::CLOSER );
+				self.flag.remove( Flag::CLOSER_PEND );
 
 				self.state = State::ConnectionClosed;
 				None.into()
@@ -450,7 +446,7 @@ impl<S: AsyncRead01 + AsyncWrite01> Sink<Vec<u8>> for TungWebSocket<S>
 		ready!( self.as_mut().check_notify( cx ) );
 
 
-		if self.sink_closed
+		if self.flag.contains( Flag::SINK_CLOSED )
 		{
 			return Err( io::ErrorKind::NotConnected.into() ).into()
 		}
@@ -480,7 +476,7 @@ impl<S: AsyncRead01 + AsyncWrite01> Sink<Vec<u8>> for TungWebSocket<S>
 	{
 		trace!( "TungWebSocket: start_send" );
 
-		if self.sink_closed
+		if self.flag.contains( Flag::SINK_CLOSED )
 		{
 			return Err( io::ErrorKind::NotConnected.into() ).into()
 		}
@@ -508,7 +504,7 @@ impl<S: AsyncRead01 + AsyncWrite01> Sink<Vec<u8>> for TungWebSocket<S>
 	{
 		trace!( "TungWebSocket: poll_close" );
 
-		self.sink_closed = true;
+		self.flag.insert( Flag::SINK_CLOSED );
 
 		// We ignore closed errors since that's what we want, and because after calling this method
 		// the sender task can in any case be dropped, and verifying that the connection can actually

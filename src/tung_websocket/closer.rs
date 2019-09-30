@@ -6,8 +6,7 @@ use
 
 
 
-// Keep track of events we need to send. They get put in a queue and on each read/write operation
-// we first try to notify all observers before polling the inner stream.
+// Keep track of our state so we can progress through it if the sink returns pending.
 //
 #[ derive( Debug, Clone ) ]
 //
@@ -53,7 +52,6 @@ impl PartialEq for State
 pub(super) struct Closer
 {
 	state: State,
-
 }
 
 
@@ -61,10 +59,7 @@ impl Closer
 {
 	pub(super) fn new() -> Self
 	{
-		Self
-		{
-			state: State::Ready,
-		}
+		Self{ state: State::Ready }
 	}
 
 
@@ -85,7 +80,7 @@ impl Closer
 	// Will try to send out a close frame to the websocket. It will then poll that send for completion
 	// saving it's state and returning pending if no more progress can be made.
 	//
-	// Any errors that happen will be returned out of band as pharos events.
+	// Any errors that happen will be returned out of band as pharos events through the Notifier.
 	//
 	pub(super) fn run
 	(
@@ -101,9 +96,9 @@ impl Closer
 
 		match &self.state
 		{
-			State::Ready     => Ok(()).into(),
-			State::SinkError => Err(()).into(),
-			State::Closed    => Err(()).into(),
+			State::Ready     => Ok (()).into() ,
+			State::SinkError => Err(()).into() ,
+			State::Closed    => Err(()).into() ,
 
 			State::Closing( frame ) =>
 			{
@@ -222,3 +217,4 @@ impl Closer
 		}
 	}
 }
+

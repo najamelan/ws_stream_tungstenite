@@ -1,6 +1,3 @@
-mod endpoint;
-use endpoint::Endpoint;
-
 // Verify the correct error is returned when sending a text message.
 //
 use
@@ -16,6 +13,7 @@ use
 	pharos                :: { Observable, ObserveConfig                                                                } ,
 	assert_matches        :: { assert_matches                                                                           } ,
 	async_progress        :: { Progress                                                                                 } ,
+	endpoint              :: { Endpoint                                                                                 } ,
 
 	log           :: { * } ,
 };

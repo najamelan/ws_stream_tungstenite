@@ -37,11 +37,13 @@ futures-timer = "^0.3"
 futures_codec = "^0.3"
 futures_ringbuf = "^0.1"
 pretty_assertions = "^0.6"
-ringbuf = "^0.1"
 url = "^2"
 
 [dev-dependencies.async_progress]
 path = "../async_progress"
+
+[dev-dependencies.endpoint]
+path = "endpoint"
 
 [dev-dependencies.futures-preview]
 features = ["async-await"]

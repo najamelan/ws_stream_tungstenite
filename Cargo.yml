@@ -66,10 +66,9 @@ dev-dependencies:
   futures_codec       : ^0.3
   futures_ringbuf     : ^0.1
   pretty_assertions   : ^0.6
-  ringbuf             : ^0.1
   tokio-executor      : { version: ^0.1 }
   url                 : ^2
-
+  endpoint            : { path: endpoint }
 
 profile:
 

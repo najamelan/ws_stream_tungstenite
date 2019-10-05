@@ -1,0 +1,21 @@
+# Auto-generated from "Cargo.yml"
+[dependencies]
+log = "^0.4"
+ringbuf = "^0.1"
+
+[dependencies.futures_01]
+package = "futures"
+version = "^0.1"
+
+[dependencies.tokio]
+default-features = false
+features = ["codec"]
+version = "^0.1"
+
+[package]
+authors = ["Naja Melan <najamelan@autistici.org>"]
+description = "Network stream mock for tokio 0.1"
+edition = "2018"
+license = "Unlicense"
+name = "endpoint"
+version = "0.1.0"

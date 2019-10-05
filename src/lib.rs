@@ -66,6 +66,7 @@ mod import
 		futures_test   :: { task::noop_waker              } ,
 		pharos         :: { Channel                       } ,
 		assert_matches :: { assert_matches                } ,
+		endpoint       :: { Endpoint                      } ,
 	};
 }
 

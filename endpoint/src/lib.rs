@@ -8,7 +8,10 @@ use
 };
 
 
-// A mock duplex network stream implementing tokio_01::AsyncRead/Write
+// A mock duplex network stream implementing tokio_01::AsyncRead/Write. This is not thoroughly documented,
+// but it's a temporary type until tokio-tungstenite switches to async await.
+//
+// An equivalent mock network connection for async await will be available in the futures_ringbuf crate.
 //
 pub struct Endpoint
 {

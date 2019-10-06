@@ -9,23 +9,6 @@ use
 };
 
 
-
-#[ derive( Debug, Clone, PartialEq, Eq ) ]
-//
-enum State
-{
-	// All systems green.
-	//
-	Ready,
-
-	// Tungstenite indicated us that the connection is closed, we should neither poll,
-	// nor try to send anything to it anymore.
-	//
-	ConnectionClosed,
-}
-
-
-
 bitflags!
 {
 	/// Tasks that are woken up always come from either the poll_read (Stream) method or poll_ready and
@@ -34,14 +17,19 @@ bitflags!
 	/// However we inject extra work (Sending a close frame from read and Sending events on pharos).
 	/// When these tasks return pending, we want to return pending from our user facing poll methods.
 	/// However when progress can be made these will wake up the task and it's our user facing methods
-	/// that get called first. This state allows tracking which of are in progress and need to be resumed.
+	/// that get called first. This state allows tracking which sub tasks are in progress and need to be resumed.
+	///
+	/// SINK_CLOSED is used to keep track of any state where we should no longer send anything into the sink
+	/// (eg. it returned an error). In that case, we might still poll the stream to drive a close handshake
+	/// to completion.
 	//
-	struct Flag: u8
+	struct State: u8
 	{
 		const NOTIFIER_PEND = 0x01;
 		const CLOSER_PEND   = 0x02;
 		const PHAROS_CLOSED = 0x04;
 		const SINK_CLOSED   = 0x08;
+		const STREAM_CLOSED = 0x10;
 	}
 }
 
@@ -50,26 +38,15 @@ bitflags!
 
 /// A wrapper around a WebSocket provided by tungstenite. This provides Stream/Sink Vec<u8> to
 /// simplify implementing AsyncRead/AsyncWrite on top of tokio-tungstenite.
-///
-/// The methods `close_because` and `verify_close_in_progress` are helper methods to send out
-/// a close frame over the sink from poll_next, whilst first polling this until it returns Poll::Ready
-/// before polling tungstenite for a next message.
-///
-/// Similarly, `notify` and `verify_pharos` do the same for sending out events over pharos.
-///
-/// These methods don't return errors (would be send specific errors) since we are mostly in reading context.
-/// The close methods return errors through the event stream, and when writing to the event stream fails,
-/// they silently stop sending out events.
 //
 pub(crate) struct TungWebSocket<S: AsyncRead01 + AsyncWrite01>
 {
 	sink  : Compat01As03Sink< SplitSink01  < TTungSocket<S> >, TungMessage > ,
 	stream: Compat01As03    < SplitStream01< TTungSocket<S> >              > ,
 
-	state     : State    ,
-	flag      : Flag     ,
-	notifier  : Notifier ,
-	closer    : Closer   ,
+	state    : State    ,
+	notifier : Notifier ,
+	closer   : Closer   ,
 }
 
 
@@ -86,8 +63,7 @@ impl<S> TungWebSocket<S> where S: AsyncRead01 + AsyncWrite01
 			stream   : Compat01As03    ::new( rx ) ,
 			sink     : Compat01As03Sink::new( tx ) ,
 
-			state    : State::Ready                ,
-			flag     : Flag::empty()               ,
+			state    : State::empty()              ,
 			notifier : Notifier::new()             ,
 			closer   : Closer::new()               ,
 		}
@@ -95,11 +71,11 @@ impl<S> TungWebSocket<S> where S: AsyncRead01 + AsyncWrite01
 
 
 	// Check whether there is messages queued up for notification.
-	// Return Pending until all of them are processed.
+	// Returns Pending until all of them are processed.
 	//
 	fn check_notify( mut self: Pin<&mut Self>, cx: &mut Context<'_> ) -> Poll<()>
 	{
-		if !self.flag.contains( Flag::NOTIFIER_PEND )
+		if !self.state.contains( State::NOTIFIER_PEND )
 		{
 			return ().into();
 		}
@@ -107,60 +83,65 @@ impl<S> TungWebSocket<S> where S: AsyncRead01 + AsyncWrite01
 		match ready!( self.notifier.run( cx ) )
 		{
 			Ok (_) => {}
-			Err(_) => self.flag.insert( Flag::PHAROS_CLOSED ),
+			Err(_) => self.state.insert( State::PHAROS_CLOSED ),
 		}
 
-		self.flag.remove( Flag::NOTIFIER_PEND );
+		self.state.remove( State::NOTIFIER_PEND );
 
 		().into()
 	}
 
 
+	// Queue a new event to be delivered to observers.
+	//
 	fn queue_event( &mut self, evt: WsEvent )
 	{
 		// It should only happen if we call close on it, and we should never do that.
 		//
-		debug_assert!( !self.flag.contains( Flag::PHAROS_CLOSED ), "If this happens, it's a bug in ws_stream_tungstenite, please report." );
+		debug_assert!
+		(
+			!self.state.contains( State::PHAROS_CLOSED ),
+			"If this happens, it's a bug in ws_stream_tungstenite, please report."
+		);
 
 		self.notifier.queue( evt );
 
-		self.flag.insert( Flag::NOTIFIER_PEND );
+		self.state.insert( State::NOTIFIER_PEND );
 	}
 
 
 	// Take care of sending a close frame to tungstenite.
 	//
-	// Will return pending until the entire operation is finished.
+	// Will return pending until the entire sending operation is finished. We still need to poll
+	// the stream to drive the handshake to completion.
 	//
 	fn send_closeframe( &mut self, code: CloseCode, reason: Cow<'static, str>, cx: &mut Context<'_> ) -> Poll<()>
 	{
-		self.flag.insert( Flag::CLOSER_PEND );
-
-		// As soon as we are closing, accept no more messages for writing.
+		// If the sink is already closed, don't try to send any more close frames.
 		//
-		self.flag.insert( Flag::SINK_CLOSED );
-
-		// TODO: check for connection closed, sink errors, etc
-
-		self.closer.queue( CloseFrame{ code, reason } );
-
-		if ready!( Pin::new( &mut self.closer ).run( &mut self.sink, &mut self.notifier, cx) ).is_err()
+		if !self.state.contains( State::SINK_CLOSED )
 		{
-			self.flag.insert( Flag::SINK_CLOSED );
+			// As soon as we are closing, accept no more messages for writing.
+			//
+			self.state.insert( State::SINK_CLOSED );
+			self.state.insert( State::CLOSER_PEND );
+
+			self.closer.queue( CloseFrame{ code, reason } )
+
+				.expect( "ws_stream_tungstenite should not queue 2 close frames" )
+			;
 		}
 
-		self.flag.remove( Flag::CLOSER_PEND );
-
-		Pin::new( self ).check_notify( cx )
+		self.check_closer( cx )
 	}
 
 
-	// Check whether there is messages queued up for notification.
-	// Return Pending until all of them are processed.
+	// Check whether there is a close frame in progress of being sent.
+	// Returns Pending the underlying sink is flushed.
 	//
 	fn check_closer( &mut self, cx: &mut Context<'_> ) -> Poll<()>
 	{
-		if !self.flag.contains( Flag::CLOSER_PEND )
+		if !self.state.contains( State::CLOSER_PEND )
 		{
 			return ().into();
 		}
@@ -168,13 +149,15 @@ impl<S> TungWebSocket<S> where S: AsyncRead01 + AsyncWrite01
 
 		if ready!( Pin::new( &mut self.closer ).run( &mut self.sink, &mut self.notifier, cx) ).is_err()
 		{
-			self.flag.insert( Flag::SINK_CLOSED );
+			self.state.insert( State::SINK_CLOSED );
 		}
 
+		self.state.remove( State::CLOSER_PEND );
 
-		self.flag.remove( Flag::CLOSER_PEND );
 
-		().into()
+		// Since closer might have queued events, before returning, make sure they are flushed.
+		//
+		Pin::new( self ).check_notify( cx )
 	}
 }
 
@@ -187,20 +170,15 @@ impl<S: AsyncRead01 + AsyncWrite01> Stream for TungWebSocket<S>
 
 	/// Get the next websocket message and convert it to a Vec<u8>.
 	///
-	/// When None is returned, it means it is safe to drop the underlying connection.
+	/// When None is returned, it means it is safe to drop the underlying connection. Even after calling
+	/// close on the sink, this should be polled until it returns None to drive the close handshake to completion.
 	///
 	/// ### Errors
 	///
-	/// The following errors can be returned from this method:
+	/// Errors are mostly returned out of band as events through pharos::Observable. Only fatal errors are returned
+	/// directly from this method.
 	///
-	/// - [`io::ErrorKind::InvalidData`]: This means that a protocol error was encountered (eg. the remote did something wrong)
-	///   Protocol error here means either against the websocket protocol or sending websocket Text messages which don't
-	///   make sense for AsyncRead/AsyncWrite. When these happen, we start the close handshake for the connection, notifying
-	///   the remote that they made a protocol violation. You should not drop the connection and keep polling this stream
-	///   until it returns None. That allows tungstenite to properly handle shutting down the connection.
-	///   Until the remote confirms the close, we might still receive incoming data and it will be passed on to you.
-	///   In production code you probably want to stop polling this after a timeout if the remote doesn't acknowledge the
-	///   close.
+	/// The following errors can be returned from this method:
 	///
 	/// - other std::io::Error's generally mean something went wrong on the underlying transport. Consider these fatal
 	///   and just drop the connection.
@@ -224,7 +202,7 @@ impl<S: AsyncRead01 + AsyncWrite01> Stream for TungWebSocket<S>
 
 		// Never poll tungstenite if we already got note that the connection is ready to be dropped.
 		//
-		if self.state == State::ConnectionClosed
+		if self.state.contains( State::STREAM_CLOSED )
 		{
 			return None.into();
 		}
@@ -246,9 +224,9 @@ impl<S: AsyncRead01 + AsyncWrite01> Stream for TungWebSocket<S>
 
 				// if tungstenite is returning None here, we should no longer try to send a pending close frame.
 				//
-				self.flag.remove( Flag::CLOSER_PEND );
+				self.state.remove( State::CLOSER_PEND   );
+				self.state.insert( State::STREAM_CLOSED );
 
-				self.state = State::ConnectionClosed;
 				None.into()
 			}
 
@@ -321,13 +299,11 @@ impl<S: AsyncRead01 + AsyncWrite01> Stream for TungWebSocket<S>
 					// connection, to comply with the RFC.
 					//
 					TungErr::ConnectionClosed |
-					TungErr::AlreadyClosed =>
+					TungErr::AlreadyClosed   =>
 					{
 						trace!( "poll_next: got {} from inner stream", err );
 
-						debug_assert!( self.state != State::ConnectionClosed, "We polled tungstenite after the connection was closed, this is a bug in ws_stream_tungstenite, please report." );
-
-						self.state = State::ConnectionClosed;
+						self.state.insert( State::STREAM_CLOSED );
 
 						self.queue_event( WsEvent::Closed );
 
@@ -340,10 +316,13 @@ impl<S: AsyncRead01 + AsyncWrite01> Stream for TungWebSocket<S>
 					//
 					TungErr::Io(e) =>
 					{
-						self.state = State::ConnectionClosed;
+						self.state.insert( State::STREAM_CLOSED );
+
+						self.queue_event( WsEvent::Error(Arc::new( Error::from( std::io::Error::from(e.kind()) ) )) );
 
 						Some(Err(e)).into()
 					}
+
 
 					// In principle this can fail. If the sendqueue of tungstenite is full, it will return
 					// an error and the close frame will stay in the Send future, or in the buffer of the
@@ -391,7 +370,8 @@ impl<S: AsyncRead01 + AsyncWrite01> Stream for TungWebSocket<S>
 					}
 
 
-					// TODO: actually capacity is on incoming as well
+					// TODO: This is very unclear what it means.
+					// see: https://github.com/snapview/tungstenite-rs/issues/82
 					//
 					TungErr::Capacity(_) =>
 					{
@@ -446,13 +426,21 @@ impl<S: AsyncRead01 + AsyncWrite01> Sink<Vec<u8>> for TungWebSocket<S>
 		ready!( self.as_mut().check_notify( cx ) );
 
 
-		if self.flag.contains( Flag::SINK_CLOSED )
+		if self.state.contains( State::SINK_CLOSED )
 		{
 			return Err( io::ErrorKind::NotConnected.into() ).into()
 		}
 
 
-		Pin::new( &mut self.sink ).poll_ready( cx ).map_err( to_io_error )
+		Pin::new( &mut self.sink ).poll_ready( cx ).map_err( |e|
+		{
+			// TODO: It's not quite clear whether the stream can remain functional when we get a sink error,
+			// but since this is a duplex connection, and poll_next also tries to send out close frames
+			// through the stream, just consider sink errors fatal.
+			//
+			self.state.insert( State::STREAM_CLOSED );
+			to_io_error( e )
+		})
 	}
 
 
@@ -476,12 +464,21 @@ impl<S: AsyncRead01 + AsyncWrite01> Sink<Vec<u8>> for TungWebSocket<S>
 	{
 		trace!( "TungWebSocket: start_send" );
 
-		if self.flag.contains( Flag::SINK_CLOSED )
+		if self.state.contains( State::SINK_CLOSED )
 		{
 			return Err( io::ErrorKind::NotConnected.into() ).into()
 		}
 
-		Pin::new( &mut self.sink ).start_send( item.into() ).map_err( to_io_error )
+
+		Pin::new( &mut self.sink ).start_send( item.into() ).map_err( |e|
+		{
+			// TODO: It's not quite clear whether the stream can remain functional when we get a sink error,
+			// but since this is a duplex connection, and poll_next also tries to send out close frames
+			// through the stream, just consider sink errors fatal.
+			//
+			self.state.insert( State::STREAM_CLOSED );
+			to_io_error( e )
+		})
 	}
 
 	/// This will do a send under the hood, so the same errors as from start_send can occur here.
@@ -490,7 +487,16 @@ impl<S: AsyncRead01 + AsyncWrite01> Sink<Vec<u8>> for TungWebSocket<S>
 	{
 		trace!( "TungWebSocket: poll_flush" );
 
-		Pin::new( &mut self.sink ).poll_flush( cx ).map_err( to_io_error )
+
+		Pin::new( &mut self.sink ).poll_flush( cx ).map_err( |e|
+		{
+			// TODO: It's not quite clear whether the stream can remain functional when we get a sink error,
+			// but since this is a duplex connection, and poll_next also tries to send out close frames
+			// through the stream, just consider sink errors fatal.
+			//
+			self.state.insert( State::STREAM_CLOSED );
+			to_io_error( e )
+		})
 	}
 
 
@@ -504,13 +510,21 @@ impl<S: AsyncRead01 + AsyncWrite01> Sink<Vec<u8>> for TungWebSocket<S>
 	{
 		trace!( "TungWebSocket: poll_close" );
 
-		self.flag.insert( Flag::SINK_CLOSED );
+		self.state.insert( State::SINK_CLOSED );
 
 		// We ignore closed errors since that's what we want, and because after calling this method
 		// the sender task can in any case be dropped, and verifying that the connection can actually
 		// be closed should be done through the reader task.
 		//
-		Pin::new( &mut self.sink ).poll_close( cx ).map_err( to_io_error )
+		Pin::new( &mut self.sink ).poll_close( cx ).map_err( |e|
+		{
+			// TODO: It's not quite clear whether the stream can remain functional when we get a sink error,
+			// but since this is a duplex connection, and poll_next also tries to send out close frames
+			// through the stream, just consider sink errors fatal.
+			//
+			self.state.insert( State::STREAM_CLOSED );
+			to_io_error( e )
+		})
 	}
 }
 

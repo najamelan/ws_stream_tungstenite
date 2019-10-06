@@ -1,8 +1,6 @@
-
 // Tested:
 //
 // ✔ notifiying errors through pharos
-// - dealing with backpressure and send in several times
 //
 use crate :: { import::*, WsEvent, ErrorKind, tung_websocket::{ notifier::Notifier, closer::Closer } };
 
@@ -26,6 +24,7 @@ fn notify_errors()
 		let mut closer = Closer::new();
 		let     waker  = noop_waker();
 		let mut cx     = Context::from_waker( &waker );
+
 
 		let writer = async
 		{

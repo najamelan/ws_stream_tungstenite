@@ -91,7 +91,7 @@ impl io::Read for Endpoint
 	{
 		if !self.own_open.load( SeqCst )
 		{
-			return Ok(0);
+			return Err( io::ErrorKind::NotConnected.into() );
 		}
 
 		let res = match self.reader.read( buf )
@@ -156,7 +156,7 @@ impl io::Write for Endpoint
 		if !self.  own_open.load( SeqCst )
 		|| !self.other_open.load( SeqCst )
 		{
-			return Ok(0);
+			return Err( io::ErrorKind::NotConnected.into() );
 		}
 
 		let res = match self.writer.write( buf )

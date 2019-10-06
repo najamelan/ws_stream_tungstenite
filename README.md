@@ -11,14 +11,14 @@
 This crate provides AsyncRead/Write over _tokio-tungstenite_ websockets. It mainly enables working with rust wasm code and communicating over a framed stream of bytes. This crate provides the functionality for non-WASM targets (eg. server side).
 There is a WASM version [available here](https://crates.io/crates/ws_stream_wasm) for the client side.
 
-There are currently 2 versions of the AsyncRead/Write traits. The _futures-rs_ version and the _tokio_ version. This crate implements the futures version only for now. We will see how the ecosystem evolves and adapt. This means you can frame your connection with the [`futures-codec`](https://crates.io/crates/futures_codec) crate. You can send arbitrary rust structs using [`futures_cbor_codec`](https://crates.io/crates/futures_cbor_codec). Know that the interface of _futures-codec_ is identical to the _tokio-codec_ one, so converting a codec is trivial.
+There are currently 2 versions of the AsyncRead/Write traits. The _futures-rs_ version and the _tokio_ version. This crate implements the _futures-rs_ version only for now. We will see how the ecosystem evolves and adapt. This means you can frame your connection with the [`futures-codec`](https://crates.io/crates/futures_codec) crate. You can send arbitrary rust structs using [`futures_cbor_codec`](https://crates.io/crates/futures_cbor_codec). Know that the interface of _futures-codec_ is identical to the _tokio-codec_ one, so converting a codec is trivial.
 
 You might wonder, why not just serialize your struct and send it in websocket messages. First of all, on wasm there wasn't a convenient websocket rust crate before I released _ws_stream_wasm_, even without AsyncRead/Write. Next, this allows you to keep your code generic by just taking AsyncRead/Write instead of adapting it to a specific protocol like websockets, which is especially useful in library crates.
 
 Currently _tokio-tungstenite_ is still on futures 0.1, so frequent changes are expected in the upcoming months and this will remain in alpha until the ecosystem stabelizes somewhat.
 
 _ws_stream_tungstenite_ works on top of _tokio-tungstenite_, so you will have to use the API from _tokio-tungstenite_ to setup your
-connection and pass the `WebSocketStream` to `WsStream`.
+connection and pass the [`WebSocketStream`](tokio_tungstenite::WebSocketStream) to [`WsStream`].
 
 ## Table of Contents
 
@@ -38,6 +38,9 @@ connection and pass the `WebSocketStream` to `WsStream`.
 
 
 ## Install
+
+_ws_stream_tungstenite_ will probably remain on an alpha version until _tokio-tungstenite_ switches to tokio 0.2.
+
 With [cargo add](https://github.com/killercup/cargo-edit):
 `cargo add ws_stream_tungstenite`
 
@@ -61,11 +64,11 @@ Please check out the [changelog](https://github.com/najamelan/ws_stream_tungsten
 
 ### Dependencies
 
-This crate has few dependiencies. Cargo will automatically handle it's dependencies for you.
+This crate has few dependencies. Cargo will automatically handle it's dependencies for you.
 
 Note that we currently depend on both futures and tokio 0.1, which adds some bloat. Hopefully it won't take to long before we can drop the 0.1 stuff forever.
 
-Warning: Currently we are waiting for bugfixes to be released in 2 dependencies. We use the following patch section. You should
+Warning: Currently we are waiting for bug fixes to be released in 2 dependencies. We use the following patch section. You should
 probably add that as well.
 ```yaml
 patch:
@@ -90,53 +93,69 @@ The [integration tests](https://github.com/najamelan/ws_stream_tungstenite/tree/
 
 This is the most basic idea (for client code):
 
-```rust, ignore
-let     socket      = TcpListener::bind( &"127.0.0.1:3012".parse().unwrap() ).unwrap();
-let mut connections = socket.incoming().compat();
-
-let tcp = connections.next().await.expect( "1 connection" ).expect( "tcp connect" );
-let s   = ok( tcp ).and_then( accept_async ).compat().await.expect( "ws handshake" );
-let ws  = WsStream::new( s );
-
-let (mut sink, mut stream) = Framed::new( ws, LinesCodec {} ).split();
-
-
-while let Some( msg ) = stream.next().await
+```rust
+use
 {
-   let msg = match msg
+   ws_stream_tungstenite :: { *                                    } ,
+   futures               :: { StreamExt                            } ,
+   futures::compat       :: { Future01CompatExt, Stream01CompatExt } ,
+   log                   :: { *                                    } ,
+   tokio                 :: { net::{ TcpListener }                 } ,
+   futures_01            :: { future::{ ok, Future as _ }          } ,
+   tokio_tungstenite     :: { accept_async                         } ,
+   futures_codec         :: { LinesCodec, Framed                   } ,
+};
+
+async fn run()
+{
+   let     socket      = TcpListener::bind( &"127.0.0.1:3012".parse().unwrap() ).unwrap();
+   let mut connections = socket.incoming().compat();
+
+   let tcp = connections.next().await.expect( "1 connection" ).expect( "tcp connect" );
+   let s   = ok( tcp ).and_then( accept_async ).compat().await.expect( "ws handshake" );
+   let ws  = WsStream::new( s );
+
+   // ws here is observable with pharos to detect non fatal errors and ping/close events, which cannot
+   // be represented in the AsyncRead/Write API. See the events example in the repository.
+
+   let (mut sink, mut stream) = Framed::new( ws, LinesCodec {} ).split();
+
+
+   while let Some( msg ) = stream.next().await
    {
-      Err(e) =>
+      let msg = match msg
       {
-         error!( "Error on server stream: {:?}", e );
+         Err(e) =>
+         {
+            error!( "Error on server stream: {:?}", e );
 
-         // Errors are generally fatal.
-         // if possible ws_stream will try to close the connection with a clean handshake,
-         // but if the error persists, it will just give up and return None next iteration,
-         // after which we should drop the connection.
-         //
-         continue;
-      }
+            // Errors returned directly through the AsyncRead/Write API are fatal, generally an error on the underlying
+            // transport.
+            //
+            continue;
+         }
 
-      Ok(m) => m,
-   };
+         Ok(m) => m,
+      };
 
 
-   info!( "server received: {}", msg.trim() );
+      info!( "server received: {}", msg.trim() );
 
-   // ... do something usefull
+      // ... do something useful
+   }
+
+   // safe to drop the TCP connection
 }
-
-// safe to drop the tcp connection
 ```
 
 
 ### How to close a connection
-The websocket RFC specefies the close handshake, summarized as follows:
+The websocket RFC specifies the close handshake, summarized as follows:
 - when an endpoint wants to close the connection, it sends a close frame and after that it sends no more data.
   Since the other endpoint might still be sending data, it's best to continue processing incoming data, until:
-- the remote sends an acknowledgement of the close frame.
+- the remote sends an acknowledgment of the close frame.
 - after an endpoint has both sent and received a close frame, the connection is considered closed and the server
-  is to close the underlying tcp connection. The client can chose to close it if the server doesn't in a timely manner.
+  is to close the underlying TCP connection. The client can chose to close it if the server doesn't in a timely manner.
 
 Properly closing the connection with _ws_stream_tungstenite_ is pretty simple. If the remote endpoint initiates the close,
 just polling the stream will make sure the connection is kept until the handshake is finished. When the stream
@@ -178,9 +197,9 @@ The reference documents for understanding websockets and how the browser handles
 
 ## Contributing
 
-This repository accepts contributions. Ideas, questions, feature requests and bug reports can be filed through github issues.
+This repository accepts contributions. Ideas, questions, feature requests and bug reports can be filed through Github issues.
 
-Pull Requests are welcome on github. By commiting pull requests, you accept that your code might be modified and reformatted to fit the project coding style or to improve the implementation. Please discuss what you want to see modified before filing a pull request if you don't want to be doing work that might be rejected.
+Pull Requests are welcome on Github. By committing pull requests, you accept that your code might be modified and reformatted to fit the project coding style or to improve the implementation. Please discuss what you want to see modified before filing a pull request if you don't want to be doing work that might be rejected.
 
 Please file PR's against the `dev` branch, don't forget to update the changelog and the documentation.
 

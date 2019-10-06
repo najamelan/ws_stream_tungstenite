@@ -5,6 +5,11 @@ use
 };
 
 
+#[ cfg(test) ] mod closer_send     ;
+#[ cfg(test) ] mod notify_errors   ;
+#[ cfg(test) ] mod no_double_close ;
+
+
 
 // Keep track of our state so we can progress through it if the sink returns pending.
 //
@@ -64,15 +69,15 @@ impl Closer
 
 
 
-	pub(super) fn queue( &mut self, frame: CloseFrame<'static> )
+	pub(super) fn queue( &mut self, frame: CloseFrame<'static> ) -> Result<(), ()>
 	{
-		if self.state == State::Ready
+		if self.state != State::Ready
 		{
-			self.state = State::Closing( frame );
+			return Err(())
 		}
 
-
-		// TODO: else what?
+		self.state = State::Closing( frame );
+		Ok(())
 	}
 
 

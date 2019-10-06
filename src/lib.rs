@@ -50,7 +50,7 @@ mod import
 		futures::compat   :: { Compat01As03, Compat01As03Sink                                                               } ,
 		futures           :: { prelude::{ Stream, Sink, AsyncRead, AsyncWrite }, Poll, task::Context, ready                 } ,
 		log               :: { trace, debug, error, warn                                                                    } ,
-		std               :: { io::{ self }, pin::Pin, fmt, borrow::Cow, error::Error as ErrorTrait, ops::Deref, collections::VecDeque, sync::Arc             } ,
+		std               :: { io::{ self }, pin::Pin, fmt, borrow::Cow, error::Error as ErrorTrait, ops::Deref, collections::VecDeque, sync::Arc } ,
 		tokio             :: { io::{ AsyncRead as AsyncRead01, AsyncWrite as AsyncWrite01 }                                 } ,
 		tokio_tungstenite :: { WebSocketStream as TTungSocket                                                               } ,
 		tungstenite       :: { Message as TungMessage, Error as TungErr, protocol::{ CloseFrame, frame::coding::CloseCode } } ,
@@ -62,11 +62,16 @@ mod import
 	//
 	pub(crate) use
 	{
-		futures        :: { executor::block_on, StreamExt } ,
-		futures_test   :: { task::noop_waker              } ,
-		pharos         :: { Channel                       } ,
-		assert_matches :: { assert_matches                } ,
-		endpoint       :: { Endpoint                      } ,
+		futures           :: { executor::block_on, StreamExt, SinkExt    } ,
+		futures_test      :: { task::noop_waker                          } ,
+		pharos            :: { Channel                                   } ,
+		assert_matches    :: { assert_matches                            } ,
+		endpoint          :: { Endpoint                                  } ,
+		futures           :: { future::{ join }, compat::Sink01CompatExt } ,
+		futures::compat   :: { Stream01CompatExt                         } ,
+		tokio_tungstenite :: { WebSocketStream                           } ,
+		tungstenite       :: { protocol::{ Role }                        } ,
+		log               :: { *                                         } ,
 	};
 }
 

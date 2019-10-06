@@ -2,20 +2,19 @@
 //
 use
 {
-	ws_stream_tungstenite :: { *                                                                                        } ,
-	std                   :: { future::Future                                                                           } ,
-	futures               :: { StreamExt, SinkExt, executor::block_on, future::{ join, join3 }, compat::Sink01CompatExt } ,
-	futures_codec         :: { LinesCodec, Framed                                                                       } ,
-	futures::compat       :: { Stream01CompatExt                                                                        } ,
-	futures_01            :: { stream::Stream                                                                           } ,
-	tokio_tungstenite     :: { WebSocketStream                                                                          } ,
-	tungstenite           :: { protocol::{ WebSocketConfig, CloseFrame, frame::coding::CloseCode, Role }, Message       } ,
-	pharos                :: { Observable, ObserveConfig                                                                } ,
-	assert_matches        :: { assert_matches                                                                           } ,
-	async_progress        :: { Progress                                                                                 } ,
-	endpoint              :: { Endpoint                                                                                 } ,
-
-	log           :: { * } ,
+	ws_stream_tungstenite :: { *                                                                                  } ,
+	std                   :: { future::Future                                                                     } ,
+	futures               :: { StreamExt, SinkExt, executor::block_on, future::join, compat::Sink01CompatExt      } ,
+	futures_codec         :: { LinesCodec, Framed                                                                 } ,
+	futures::compat       :: { Stream01CompatExt                                                                  } ,
+	futures_01            :: { stream::Stream                                                                     } ,
+	tokio_tungstenite     :: { WebSocketStream                                                                    } ,
+	tungstenite           :: { protocol::{ WebSocketConfig, CloseFrame, frame::coding::CloseCode, Role }, Message } ,
+	pharos                :: { Observable, ObserveConfig                                                          } ,
+	assert_matches        :: { assert_matches                                                                     } ,
+	async_progress        :: { Progress                                                                           } ,
+	endpoint              :: { Endpoint                                                                           } ,
+	log                   :: { *                                                                                  } ,
 };
 
 
@@ -34,32 +33,26 @@ use
 //
 fn send_text_backpressure()
 {
-	// flexi_logger::Logger::with_str( "send_text_backpressure=trace, tungstenite=trace, tokio_tungstenite=trace, ws_stream_tungstenite=trace, tokio=warn" ).start().expect( "flexi_logger");
+	// flexi_logger::Logger::with_str( "send_text_backpressure=trace, async_progress=trace, tungstenite=warn, tokio_tungstenite=warn, ws_stream_tungstenite=warn, tokio=warn" ).start().expect( "flexi_logger");
 
 	let (sc, cs) = Endpoint::pair( 37, 22 );
 
-	let steps       = Progress::new( Step::Start   );
-	let fill_queue  = steps.once( Step::FillQueue  );
+	let steps       = Progress::new( Step::FillQueue );
 	let send_text   = steps.once( Step::SendText   );
 	let read_text   = steps.once( Step::ReadText   );
 	let client_read = steps.once( Step::ClientRead );
 
 
-	let server = server( fill_queue, read_text  , steps.clone(), sc );
-	let client = client( send_text , client_read, steps.clone(), cs );
+	let server = server( read_text, steps.clone(), sc );
+	let client = client( send_text, client_read, steps.clone(), cs );
 
-
-	info!( "start test" );
-	let start = steps.set_state( Step::FillQueue );
-
-	block_on( join3( server, client, start ) );
+	block_on( join( server, client ) );
 	info!( "end test" );
 }
 
 
 async fn server
 (
-	fill_queue: impl Future    ,
 	read_text : impl Future    ,
 	steps     : Progress<Step> ,
 	sc        : Endpoint       ,
@@ -80,8 +73,6 @@ async fn server
 
 	let writer = async
 	{
-		info!( "wait for fill_queue" );
-		fill_queue.await;
 		info!( "start sending first message" );
 
 		sink.send( "hi this is like 35 characters long\n".to_string() ).await.expect( "Send first line" );
@@ -203,9 +194,8 @@ async fn client
 //
 enum Step
 {
-	Start,
-	FillQueue,
-	SendText,
-	ReadText,
-	ClientRead,
+	FillQueue  ,
+	SendText   ,
+	ReadText   ,
+	ClientRead ,
 }

@@ -5,10 +5,12 @@ use
 };
 
 
+// Unit tests for closer. Sending in several times when there is back pressure is tested in the
+// integration test send_text_backpressure in this crate, so I haven't made a specific test here.
+//
 #[ cfg(test) ] mod closer_send     ;
 #[ cfg(test) ] mod notify_errors   ;
 #[ cfg(test) ] mod no_double_close ;
-
 
 
 // Keep track of our state so we can progress through it if the sink returns pending.

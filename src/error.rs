@@ -21,27 +21,13 @@ pub struct Error
 //
 pub enum ErrorKind
 {
-	/// This is an error from tokio-tungstenite.
-	//
-	WsHandshake,
-
-	/// An error happend on the tcp level when connecting. This will contain an inner
-	/// error that you can obtain with `error.source()` for more information. The underlying
-	/// error will be formatted in the display impl.
-	//
-	TcpConnection,
-
 	/// A tungstenite error.
 	//
 	Tungstenite,
 
-	/// A tungstenite error.
+	/// An error from the underlying connection.
 	//
 	Io,
-
-	/// A warp error.
-	//
-	WarpErr,
 
 	/// A websocket protocol error.
 	//
@@ -51,7 +37,7 @@ pub enum ErrorKind
 	//
 	ReceivedText,
 
-	/// Trying to work with an object that is closed.
+	/// Trying to work with an connection that is closed.
 	//
 	Closed,
 
@@ -82,11 +68,8 @@ impl fmt::Display for ErrorKind
 	{
 		match self
 		{
-			Self::WsHandshake   => fmt::Display::fmt( "The WebSocket handshake failed.", f ) ,
-			Self::TcpConnection => fmt::Display::fmt( "A tcp connection error happened.", f ) ,
 			Self::Tungstenite   => fmt::Display::fmt( "A tungstenite error happened.", f ) ,
 			Self::Io            => fmt::Display::fmt( "An io error happened.", f ) ,
-			Self::WarpErr       => fmt::Display::fmt( "WarpErr:", f ) ,
 			Self::Protocol      => fmt::Display::fmt( "The remote committed a websocket protocol violation.", f ) ,
 			Self::ReceivedText  => fmt::Display::fmt( "The remote sent a Text message. Only Binary messages are allowed.", f ) ,
 

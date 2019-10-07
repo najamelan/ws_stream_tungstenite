@@ -41,7 +41,8 @@ pretty_assertions = "^0.6"
 url = "^2"
 
 [dev-dependencies.endpoint]
-path = "endpoint"
+path = "./endpoint"
+version = "^0.1"
 
 [dev-dependencies.futures-preview]
 features = ["async-await"]

@@ -68,7 +68,7 @@ dev-dependencies:
   pretty_assertions   : ^0.6
   tokio-executor      : { version: ^0.1 }
   url                 : ^2
-  endpoint            : { path: endpoint }
+  endpoint            : { path: ./endpoint, version: ^0.1 }
 
 profile:
 

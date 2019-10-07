@@ -17,5 +17,5 @@ authors = ["Naja Melan <najamelan@autistici.org>"]
 description = "Network stream mock for tokio 0.1"
 edition = "2018"
 license = "Unlicense"
-name = "endpoint"
+name = "ws_stream_endpoint"
 version = "0.1.0"

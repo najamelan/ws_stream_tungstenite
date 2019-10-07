@@ -1,6 +1,6 @@
 # Changelog
 
-# 0.1.0-alpha.3 - 2019-10-06
+# 0.1.0-alpha.4 - 2019-10-07
 
   - now handle sending out a close frame correctly when we decide to close, like when we receive a text message.
 

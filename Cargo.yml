@@ -10,7 +10,7 @@ package:
   # - merge dev branch into master
   # - create git tag
   #
-  version       : 0.1.0-alpha.3
+  version       : 0.1.0-alpha.4
   name          : ws_stream_tungstenite
   edition       : '2018'
   authors       : [ Naja Melan <najamelan@autistici.org> ]
@@ -68,7 +68,7 @@ dev-dependencies:
   pretty_assertions   : ^0.6
   tokio-executor      : { version: ^0.1 }
   url                 : ^2
-  ws_stream_endpoint  : { path: endpoint, version: ^0.1 }
+  endpoint            : { path: endpoint, package: ws_stream_endpoint, version: ^0.1 }
 
 profile:
 

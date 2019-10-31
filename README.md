@@ -68,14 +68,12 @@ This crate has few dependencies. Cargo will automatically handle it's dependenci
 
 Note that we currently depend on both futures and tokio 0.1, which adds some bloat. Hopefully it won't take to long before we can drop the 0.1 stuff forever.
 
-Warning: Currently we are waiting for bug fixes to be released in 2 dependencies. We use the following patch section. You should
-probably add that as well.
+Warning: Currently we are waiting for bug fixes to be released in __tungstenite__. We use the following patch section. You should probably add that as well.
 ```yaml
 patch:
 
   crates-io:
 
-    futures_codec : { git: "https://github.com/matthunz/futures-codec.git" }
     tungstenite   : { git: "https://github.com/najamelan/tungstenite-rs"   }
 ```
 

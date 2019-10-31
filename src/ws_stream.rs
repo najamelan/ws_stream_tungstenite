@@ -144,8 +144,12 @@ enum ReadState
 
 /// When None is returned, it means it is safe to drop the underlying connection.
 ///
+/// TODO: can we not just save an IntoAsyncRead on self instead of the TungWebSocket?
+///       that way we don't need to duplicate the algorithm here?
+///
 /// ### Errors
 ///
+/// TODO: document errors
 //
 impl<S: AsyncRead01 + AsyncWrite01> AsyncRead  for WsStream<S>
 {

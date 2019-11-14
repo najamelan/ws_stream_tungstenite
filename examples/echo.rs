@@ -3,15 +3,15 @@
 //
 use
 {
-	ws_stream_tungstenite :: { *                                                       } ,
-	futures               :: { StreamExt, AsyncReadExt, AsyncBufReadExt, io::BufReader } ,
-	futures               :: { executor::LocalPool, task::LocalSpawnExt                } ,
-	futures::compat       :: { Future01CompatExt, Stream01CompatExt                    } ,
-	std                   :: { env, net::SocketAddr, io                                } ,
-	log                   :: { *                                                       } ,
-	tokio                 :: { net::{ TcpListener, TcpStream }                         } ,
-	futures_01            :: { future::{ ok, Future as _ }                             } ,
-	tokio_tungstenite     :: { accept_async, stream::PeerAddr                          } ,
+	ws_stream_tungstenite :: { *                                                    } ,
+	futures               :: { StreamExt, AsyncReadExt, io::{ BufReader, copy_buf } } ,
+	futures               :: { executor::LocalPool, task::LocalSpawnExt             } ,
+	futures::compat       :: { Future01CompatExt, Stream01CompatExt                 } ,
+	std                   :: { env, net::SocketAddr, io                             } ,
+	log                   :: { *                                                    } ,
+	tokio                 :: { net::{ TcpListener, TcpStream }                      } ,
+	futures_01            :: { future::{ ok, Future as _ }                          } ,
+	tokio_tungstenite     :: { accept_async, stream::PeerAddr                       } ,
 };
 
 
@@ -24,7 +24,7 @@ fn main()
 	//
 	let mut pool     = LocalPool::new();
 	let     spawner  = pool.spawner();
-	let mut spawner2 = spawner.clone();
+	let     spawner2 = spawner.clone();
 
 
 	let server = async move
@@ -88,7 +88,7 @@ async fn handle_conn( stream: Result< TcpStream, io::Error> )
 	// BufReader allows our AsyncRead to work with a bigger buffer than the default 8k.
 	// This improves performance quite a bit.
 	//
-	match BufReader::with_capacity( 64_000, reader ).copy_buf_into( &mut writer ).await
+	match copy_buf( BufReader::with_capacity( 64_000, reader ), &mut writer ).await
 	{
 		Ok(_) => {},
 

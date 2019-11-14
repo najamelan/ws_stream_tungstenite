@@ -21,7 +21,7 @@ fn main()
 	//
 	let mut pool     = LocalPool::new();
 	let     spawner  = pool.spawner();
-	let mut spawner2 = spawner.clone();
+	let     spawner2 = spawner.clone();
 
 	let server = async move
 	{

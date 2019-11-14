@@ -13,9 +13,10 @@ pharos = "^0.4"
 pin-utils = "^0.1.0-alpha"
 tungstenite = "^0.9"
 
-[dependencies.futures-preview]
+[dependencies.futures]
+default-features = false
 features = ["io-compat", "compat"]
-version = "0.3.0-alpha"
+version = "^0.3.1"
 
 [dependencies.futures_01]
 package = "futures"
@@ -33,23 +34,18 @@ version = "^0.9"
 assert_matches = "^1.3"
 async_progress = "^0.1"
 flexi_logger = "^0.14"
-futures-test-preview = "^0.3.0-alpha"
+futures = "^0.3"
+futures-test = "^0.3"
 futures-timer = "^0.3"
 futures_codec = "^0.3"
 futures_ringbuf = "^0.1"
 pretty_assertions = "^0.6"
+tokio-executor = "^0.1"
 url = "^2"
 
 [dev-dependencies.endpoint]
 package = "ws_stream_endpoint"
 path = "endpoint"
-version = "^0.1"
-
-[dev-dependencies.futures-preview]
-features = ["async-await"]
-version = "^0.3.0-alpha"
-
-[dev-dependencies.tokio-executor]
 version = "^0.1"
 
 [features]
@@ -68,7 +64,7 @@ license = "Unlicense"
 name = "ws_stream_tungstenite"
 readme = "README.md"
 repository = "https://github.com/najamelan/ws_stream_tungstenite"
-version = "0.1.0-alpha.4"
+version = "0.1.0-alpha.5"
 
 [package.metadata]
 [package.metadata.docs]

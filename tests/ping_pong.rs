@@ -28,7 +28,7 @@ fn ping_pong()
 	// flexi_logger::Logger::with_str( "ping_pong=trace, tungstenite=trace, tokio_tungstenite=trace, ws_stream_tungstenite=trace, tokio=warn" ).start().expect( "flexi_logger");
 
 	let mut pool     = LocalPool::new();
-	let mut spawner  = pool.spawner();
+	let     spawner  = pool.spawner();
 
 
 	let server = async

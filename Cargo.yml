@@ -76,10 +76,3 @@ profile:
 
     codegen-units: 1
 
-
-patch:
-
-  crates-io:
-
-    tungstenite   : { git: "https://github.com/snapview/tungstenite-rs"   }
-

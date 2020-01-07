@@ -71,11 +71,6 @@ version = "0.1.0-alpha.5"
 [package.metadata.docs.rs]
 features = ["external_doc"]
 
-[patch]
-[patch.crates-io]
-[patch.crates-io.tungstenite]
-git = "https://github.com/snapview/tungstenite-rs"
-
 [profile]
 [profile.release]
 codegen-units = 1

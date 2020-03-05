@@ -5,18 +5,18 @@ use crate::{ import::*, tung_websocket::TungWebSocket, WsEvent, Error };
 /// Please look at the documentation of the impls for those traits below for details (rustdoc will
 /// collapse them).
 //
-pub struct WsStream<S: AsyncRead01 + AsyncWrite01>
+pub struct WsStream<S: AsyncRead + AsyncWrite + Unpin>
 {
 	inner : TungWebSocket<S>,
 	state : ReadState,
 }
 
 
-impl<S: AsyncRead01 + AsyncWrite01> WsStream<S>
+impl<S: AsyncRead + AsyncWrite + Unpin> WsStream<S>
 {
 	/// Create a new WsStream.
 	//
-	pub fn new( inner: TTungSocket<S> ) -> Self
+	pub fn new( inner: ATungSocket<S> ) -> Self
 	{
 		Self
 		{
@@ -28,7 +28,7 @@ impl<S: AsyncRead01 + AsyncWrite01> WsStream<S>
 
 
 
-impl<S: AsyncRead01 + AsyncWrite01> fmt::Debug for WsStream<S>
+impl<S: AsyncRead + AsyncWrite + Unpin> fmt::Debug for WsStream<S>
 {
 	fn fmt( &self, f: &mut fmt::Formatter<'_> ) -> fmt::Result
 	{
@@ -53,7 +53,7 @@ impl<S: AsyncRead01 + AsyncWrite01> fmt::Debug for WsStream<S>
 /// - other std::io::Error's generally mean something went wrong on the underlying transport. Consider these fatal
 ///   and just drop the connection.
 //
-impl<S: AsyncRead01 + AsyncWrite01> AsyncWrite for WsStream<S>
+impl<S: AsyncRead + AsyncWrite + Unpin> AsyncWrite for WsStream<S>
 {
 	/// Will always flush the underlying socket. Will always create an entire Websocket message from every write,
 	/// so call with a sufficiently large buffer if you have performance problems.
@@ -151,7 +151,7 @@ enum ReadState
 ///
 /// TODO: document errors
 //
-impl<S: AsyncRead01 + AsyncWrite01> AsyncRead  for WsStream<S>
+impl<S: AsyncRead + AsyncWrite + Unpin> AsyncRead  for WsStream<S>
 {
 	fn poll_read( mut self: Pin<&mut Self>, cx: &mut Context<'_>, buf: &mut [u8] ) -> Poll< io::Result<usize> >
 	{
@@ -215,7 +215,7 @@ impl<S: AsyncRead01 + AsyncWrite01> AsyncRead  for WsStream<S>
 }
 
 
-impl<S> Observable< WsEvent > for WsStream<S> where S: AsyncRead01 + AsyncWrite01
+impl<S> Observable< WsEvent > for WsStream<S> where S: AsyncRead + AsyncWrite + Unpin
 {
 	type Error = Error;
 

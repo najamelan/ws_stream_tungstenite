@@ -39,10 +39,10 @@ bitflags!
 /// A wrapper around a WebSocket provided by tungstenite. This provides Stream/Sink Vec<u8> to
 /// simplify implementing AsyncRead/AsyncWrite on top of tokio-tungstenite.
 //
-pub(crate) struct TungWebSocket<S: AsyncRead01 + AsyncWrite01>
+pub(crate) struct TungWebSocket<S: AsyncRead + AsyncWrite + Unpin>
 {
-	sink  : Compat01As03Sink< SplitSink01  < TTungSocket<S> >, TungMessage > ,
-	stream: Compat01As03    < SplitStream01< TTungSocket<S> >              > ,
+	sink  : SplitSink  < ATungSocket<S>, TungMessage > ,
+	stream: SplitStream< ATungSocket<S> >              ,
 
 	state    : State    ,
 	notifier : Notifier ,
@@ -50,22 +50,21 @@ pub(crate) struct TungWebSocket<S: AsyncRead01 + AsyncWrite01>
 }
 
 
-impl<S> TungWebSocket<S> where S: AsyncRead01 + AsyncWrite01
+impl<S> TungWebSocket<S> where S: AsyncRead + AsyncWrite + Unpin
 {
 	/// Create a new Wrapper for a WebSocket provided by Tungstenite
 	//
-	pub(crate) fn new( inner: TTungSocket<S> ) -> Self
+	pub(crate) fn new( inner: ATungSocket<S> ) -> Self
 	{
-		let (tx, rx) = inner.split();
+		let (sink, stream) = inner.split();
 
 		Self
 		{
-			stream   : Compat01As03    ::new( rx ) ,
-			sink     : Compat01As03Sink::new( tx ) ,
-
-			state    : State::empty()              ,
-			notifier : Notifier::new()             ,
-			closer   : Closer::new()               ,
+			stream                       ,
+			sink                         ,
+			state    : State   ::empty() ,
+			notifier : Notifier::new()   ,
+			closer   : Closer  ::new()   ,
 		}
 	}
 
@@ -163,7 +162,7 @@ impl<S> TungWebSocket<S> where S: AsyncRead01 + AsyncWrite01
 
 
 
-impl<S: AsyncRead01 + AsyncWrite01> Stream for TungWebSocket<S>
+impl<S: AsyncRead + AsyncWrite + Unpin> Stream for TungWebSocket<S>
 {
 	type Item = Result<Vec<u8>, io::Error>;
 
@@ -391,9 +390,10 @@ impl<S: AsyncRead01 + AsyncWrite01> Stream for TungWebSocket<S>
 
 					// These are handshake errors:
 					//
-					TungErr::Tls (_)          |
-					TungErr::Url (_)          |
-					TungErr::Http(_)          =>
+					TungErr::Tls        (_)  |
+					TungErr::Url        (_)  |
+					TungErr::HttpFormat (_)  |
+					TungErr::Http       (_)  =>
 
 						unreachable!( "{:?}", err ),
 
@@ -410,7 +410,7 @@ impl<S: AsyncRead01 + AsyncWrite01> Stream for TungWebSocket<S>
 // eg. are there situations where the user still has to close manually? In principle a websocket is
 // a duplex connection, so we probably should not let this happen.
 //
-impl<S: AsyncRead01 + AsyncWrite01> Sink<Vec<u8>> for TungWebSocket<S>
+impl<S: AsyncRead + AsyncWrite + Unpin> Sink<Vec<u8>> for TungWebSocket<S>
 {
 	type Error = io::Error;
 
@@ -575,9 +575,10 @@ fn to_io_error( err: TungErr ) -> io::Error
 
 		// These are handshake errors
 		//
-		TungErr::Tls (..) |
-		TungErr::Http(..) |
-		TungErr::Url (..) |
+		TungErr::Tls       (..) |
+		TungErr::Http      (..) |
+		TungErr::HttpFormat(..) |
+		TungErr::Url       (..) |
 
 		// This is an error specific to Text Messages that we don't use
 		//
@@ -586,7 +587,7 @@ fn to_io_error( err: TungErr ) -> io::Error
 }
 
 
-impl<S> Observable< WsEvent > for TungWebSocket<S> where S: AsyncRead01 + AsyncWrite01
+impl<S> Observable< WsEvent > for TungWebSocket<S> where S: AsyncRead + AsyncWrite + Unpin
 {
 	type Error = Error;
 

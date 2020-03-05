@@ -2,38 +2,37 @@
 //
 use
 {
-	ws_stream_tungstenite :: { *                                                                              } ,
-	futures               :: { StreamExt, SinkExt, executor::block_on, future::join, compat::Sink01CompatExt  } ,
-	futures_codec         :: { LinesCodec, Framed                                                             } ,
-	tokio                 :: { net::{ TcpListener }                                                           } ,
-	futures::compat       :: { Future01CompatExt, Stream01CompatExt                                           } ,
-	futures_01            :: { future::{ ok, Future as _ }                                                    } ,
-	tokio_tungstenite     :: { accept_async, connect_async                                                    } ,
-	url                   :: { Url                                                                            } ,
-	tungstenite           :: { protocol::{ CloseFrame, frame::coding::CloseCode }                             } ,
-	pharos                :: { Observable, ObserveConfig                                                      } ,
+	ws_stream_tungstenite :: { *                                                    } ,
+	futures               :: { StreamExt, SinkExt, future::join                     } ,
+	futures_codec         :: { LinesCodec, Framed                                   } ,
+	tokio                 :: { net::{ TcpListener }                                 } ,
+	async_tungstenite     :: { accept_async, tokio::{ connect_async, TokioAdapter } } ,
+	url                   :: { Url                                                  } ,
+	pharos                :: { Observable, ObserveConfig                            } ,
+	tungstenite           :: { protocol::{ CloseFrame, frame::coding::CloseCode }   } ,
 
-	log           :: { * } ,
+	log :: { * } ,
 };
 
 
-#[ test ]
+#[ tokio::test ]
 //
-fn protocol_error()
+async fn protocol_error()
 {
 	// flexi_logger::Logger::with_str( "ping_pong=trace, tungstenite=trace, tokio_tungstenite=trace, ws_stream_tungstenite=trace, tokio=warn" ).start().expect( "flexi_logger");
 
 
 	let server = async
 	{
-		let socket = TcpListener::bind( &"127.0.0.1:3016".parse().unwrap() ).unwrap();
-		let mut connections = socket.incoming().compat();
+		let mut socket: TcpListener = TcpListener::bind( "127.0.0.1:3016" ).await.expect( "bind to port" );
+		let mut connections = socket.incoming();
 
 		let tcp_stream = connections.next().await.expect( "1 connection" ).expect( "tcp connect" );
-		let s          = ok( tcp_stream ).and_then( accept_async ).compat().await.expect( "ws handshake" );
-		let mut ws     = WsStream::new( s );
-		let mut events = ws.observe( ObserveConfig::default() ).expect( "observe" );
-		let mut framed = Framed::new( ws, LinesCodec {} );
+		let s          = accept_async(TokioAdapter(tcp_stream)).await.expect("Error during the websocket handshake occurred");
+		let mut server = WsStream::new( s );
+
+		let mut events = server.observe( ObserveConfig::default() ).expect( "observe" );
+		let mut framed = Framed::new( server, LinesCodec {} );
 
 
 		assert!( framed.next().await.is_none() );
@@ -48,14 +47,12 @@ fn protocol_error()
 
 	let client = async
 	{
-		let url         = Url::parse( "ws://127.0.0.1:3016" ).unwrap();
-		let (socket, _) = ok( url ).and_then( connect_async ).compat().await.expect( "ws handshake" );
-
-		let mut socket = socket.sink_compat();
+		let url             = Url::parse( "ws://127.0.0.1:3016" ).unwrap();
+		let (mut socket, _) = connect_async( url ).await.expect( "ws handshake" );
 
 		socket.send( tungstenite::Message::Ping( vec![1;126] ) ).await.expect( "send ping" );
 
-		socket.close().await.expect( "close client end" );
+		socket.close( None ).await.expect( "close client end" );
 
 		let frame = CloseFrame
 		{
@@ -68,6 +65,6 @@ fn protocol_error()
 		trace!( "drop websocket" );
 	};
 
-	block_on( join( server, client ) );
+	join( server, client ).await;
 }
 

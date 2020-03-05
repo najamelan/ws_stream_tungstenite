@@ -8,39 +8,33 @@
 //
 use
 {
-	ws_stream_tungstenite :: { *                                                                              } ,
-	futures               :: { StreamExt, SinkExt, executor::LocalPool, task::LocalSpawnExt, compat::Sink01CompatExt } ,
-	futures_codec         :: { LinesCodec, Framed                                                             } ,
-	tokio                 :: { net::{ TcpListener }                                                           } ,
-	futures::compat       :: { Future01CompatExt, Stream01CompatExt                                           } ,
-	futures_01            :: { future::{ ok, Future as _ }                                                    } ,
-	tokio_tungstenite     :: { accept_async, connect_async                                                    } ,
-	url                   :: { Url                                                                            } ,
+	ws_stream_tungstenite :: { *                                                      } ,
+	futures               :: { StreamExt, SinkExt, future::join                       } ,
+	futures_codec         :: { LinesCodec, Framed                                     } ,
+	tokio                 :: { net::{ TcpListener }                                   } ,
+	async_tungstenite     :: { accept_async, tokio::{ connect_async, TokioAdapter }   } ,
+	url                   :: { Url                                                    } ,
 
-	log           :: { * } ,
+	log :: { * } ,
 };
 
 
-#[ test ]
+#[ tokio::test ]
 //
-fn ping_pong()
+async fn ping_pong()
 {
-	// flexi_logger::Logger::with_str( "ping_pong=trace, tungstenite=trace, tokio_tungstenite=trace, ws_stream_tungstenite=trace, tokio=warn" ).start().expect( "flexi_logger");
-
-	let mut pool     = LocalPool::new();
-	let     spawner  = pool.spawner();
-
+	// flexi_logger::Logger::with_str( "ping_pong=trace, tungstenite=trace, async_tungstenite=trace, ws_stream_tungstenite=trace, tokio=warn" ).start().expect( "flexi_logger");
 
 	let server = async
 	{
-		let socket = TcpListener::bind( &"127.0.0.1:3015".parse().unwrap() ).unwrap();
-		let mut connections = socket.incoming().compat();
+		let mut socket: TcpListener = TcpListener::bind( "127.0.0.1:3015" ).await.expect( "bind to port" );
+		let mut connections = socket.incoming();
 
 		let tcp_stream = connections.next().await.expect( "1 connection" ).expect( "tcp connect" );
-		let s          = ok( tcp_stream ).and_then( accept_async ).compat().await.expect( "ws handshake" );
-		let ws         = WsStream::new( s );
+		let s          = accept_async(TokioAdapter(tcp_stream)).await.expect("Error during the websocket handshake occurred");
+		let server     = WsStream::new( s );
 
-		let mut framed = Framed::new( ws, LinesCodec {} );
+		let mut framed = Framed::new( server, LinesCodec {} );
 
 		assert_eq!( None, framed.next().await.transpose().expect( "receive on framed" ) );
 	};
@@ -48,14 +42,12 @@ fn ping_pong()
 
 	let client = async
 	{
-		let url         = Url::parse( "ws://127.0.0.1:3015" ).unwrap();
-		let (socket, _) = ok( url ).and_then( connect_async ).compat().await.expect( "ws handshake" );
-
-		let mut socket = socket.sink_compat();
+		let url             = Url::parse( "ws://127.0.0.1:3015" ).unwrap();
+		let (mut socket, _) = connect_async( url ).await.expect( "ws handshake" );
 
 		socket.send( tungstenite::Message::Ping( vec![1, 2, 3] ) ).await.expect( "send ping" );
 
-		socket.close().await.expect( "close client end" );
+		socket.close( None ).await.expect( "close client end" );
 
 		assert_eq!( Some( tungstenite::Message::Pong( vec![1, 2, 3] ) ), socket.next().await.transpose().expect( "pong"  ) );
 		assert_eq!( Some( tungstenite::Message::Close(None)           ), socket.next().await.transpose().expect( "close" ) );
@@ -63,9 +55,6 @@ fn ping_pong()
 		trace!( "drop websocket" );
 	};
 
-	spawner.spawn_local( server ).expect( "spawn server" );
-	spawner.spawn_local( client ).expect( "spawn client" );
-
-	pool.run();
+	join( server, client ).await;
 }
 

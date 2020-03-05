@@ -45,16 +45,14 @@ mod import
 {
 	pub(crate) use
 	{
-		bitflags          :: { bitflags                                                                                     } ,
-		futures_01        :: { stream::{ SplitStream as SplitStream01, SplitSink as SplitSink01, Stream as Stream01 }       } ,
-		futures::compat   :: { Compat01As03, Compat01As03Sink                                                               } ,
-		futures           :: { prelude::{ Stream, Sink, AsyncRead, AsyncWrite }, ready                                      } ,
-		log               :: { trace, debug, error, warn                                                                    } ,
-		std               :: { io::{ self }, pin::Pin, fmt, borrow::Cow, error::Error as ErrorTrait, ops::Deref, collections::VecDeque, sync::Arc, task::{ Context, Poll } } ,
-		tokio             :: { io::{ AsyncRead as AsyncRead01, AsyncWrite as AsyncWrite01 }                                 } ,
-		tokio_tungstenite :: { WebSocketStream as TTungSocket                                                               } ,
-		tungstenite       :: { Message as TungMessage, Error as TungErr, protocol::{ CloseFrame, frame::coding::CloseCode } } ,
-		pharos            :: { Observable, ObserveConfig, Events, Pharos                                                    } ,
+		bitflags          :: { bitflags                                                                                               } ,
+		futures           :: { prelude::{ Stream, Sink, AsyncRead, AsyncWrite }, ready, stream::{ SplitSink, SplitStream, StreamExt } } ,
+		log               :: { trace, debug, error, warn                                                                              } ,
+		std               :: { io, pin::Pin, fmt, borrow::Cow, error::Error as ErrorTrait, ops::Deref                                 } ,
+		std               :: { collections::VecDeque, sync::Arc, task::{ Context, Poll }                                              } ,
+		async_tungstenite :: { WebSocketStream as ATungSocket                                                                         } ,
+		tungstenite       :: { Message as TungMessage, Error as TungErr, protocol::{ CloseFrame, frame::coding::CloseCode }           } ,
+		pharos            :: { Observable, ObserveConfig, Events, Pharos                                                              } ,
 	};
 
 
@@ -62,16 +60,14 @@ mod import
 	//
 	pub(crate) use
 	{
-		futures           :: { executor::block_on, StreamExt, SinkExt    } ,
-		futures_test      :: { task::noop_waker                          } ,
-		pharos            :: { Channel                                   } ,
-		assert_matches    :: { assert_matches                            } ,
-		endpoint          :: { Endpoint                                  } ,
-		futures           :: { future::{ join }, compat::Sink01CompatExt } ,
-		futures::compat   :: { Stream01CompatExt                         } ,
-		tokio_tungstenite :: { WebSocketStream                           } ,
-		tungstenite       :: { protocol::{ Role }                        } ,
-		log               :: { *                                         } ,
+		futures           :: { executor::block_on, SinkExt } ,
+		futures_test      :: { task::noop_waker            } ,
+		pharos            :: { Channel                     } ,
+		assert_matches    :: { assert_matches              } ,
+		futures_ringbuf   :: { Endpoint                    } ,
+		futures           :: { future::{ join }            } ,
+		tungstenite       :: { protocol::{ Role }          } ,
+		log               :: { *                           } ,
 	};
 }
 

@@ -4,32 +4,30 @@
 //
 use
 {
-	ws_stream_tungstenite :: { *                                                            } ,
-	futures               :: { StreamExt, SinkExt, executor::block_on, future::join         } ,
-	futures_codec         :: { LinesCodec, Framed                                           } ,
-	tokio                 :: { net::{ TcpListener }                                         } ,
-	futures::compat       :: { Future01CompatExt, Stream01CompatExt                         } ,
-	futures_01            :: { future::{ ok, Future as _ }                                  } ,
-	tokio_tungstenite     :: { accept_async, connect_async                                  } ,
-	url                   :: { Url                                                          } ,
+	ws_stream_tungstenite :: { *                                                    } ,
+	futures               :: { StreamExt, SinkExt, future::join                     } ,
+	futures_codec         :: { LinesCodec, Framed                                   } ,
+	tokio                 :: { net::{ TcpListener }                                 } ,
+	async_tungstenite     :: { accept_async, tokio::{ connect_async, TokioAdapter } } ,
+	url                   :: { Url                                                  } ,
 
 	log :: { * } ,
 };
 
 
-#[ test ]
+#[ tokio::test ]
 //
-fn frame03()
+async fn frame03()
 {
 	// flexi_logger::Logger::with_str( "futures_codec=trace, ws_stream=trace, tokio=warn" ).start().expect( "flexi_logger");
 
 	let server = async
 	{
-		let socket = TcpListener::bind( &"127.0.0.1:3012".parse().unwrap() ).unwrap();
-		let mut connections = socket.incoming().compat();
+		let mut socket: TcpListener = TcpListener::bind( "127.0.0.1:3012" ).await.expect( "bind to port" );
+		let mut connections = socket.incoming();
 
 		let tcp_stream = connections.next().await.expect( "1 connection" ).expect( "tcp connect" );
-		let s          = ok( tcp_stream ).and_then( accept_async ).compat().await.expect( "ws handshake" );
+		let s          = accept_async( TokioAdapter(tcp_stream) ).await.expect("Error during the websocket handshake occurred");
 		let server     = WsStream::new( s );
 
 		let (mut sink, mut stream) = Framed::new( server, LinesCodec {} ).split();
@@ -49,7 +47,7 @@ fn frame03()
 	let client = async
 	{
 		let url    = Url::parse( "ws://127.0.0.1:3012" ).unwrap();
-		let socket = ok( url ).and_then( connect_async ).compat().await.expect( "ws handshake" );
+		let socket = connect_async( url ).await.expect( "ws handshake" );
 
 		let     client = WsStream::new( socket.0 );
 		let mut framed = Framed::new( client, LinesCodec {} );
@@ -62,13 +60,12 @@ fn frame03()
 		let res = framed.next().await.expect( "Receive some" ).expect( "Receive a second line" );
 		assert_eq!( "A second line\n".to_string(), res );
 
-
 		let res = framed.next().await;
 
 		assert!( res.is_none() );
 		debug!( "Client task ended" );
 	};
 
-	block_on( join( server, client ) );
+	join( server, client ).await;
 }
 

@@ -36,7 +36,7 @@ features = ["attributes"]
 version = "^1"
 
 [dev-dependencies.async-tungstenite]
-features = ["tokio-runtime"]
+features = ["tokio-runtime", "async-std-runtime"]
 version = "^0.4"
 
 [dev-dependencies.tokio]

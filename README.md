@@ -8,17 +8,15 @@
 
 > Provide an AsyncRead/Write over websockets that can be framed with a codec.
 
-This crate provides AsyncRead/Write over _tokio-tungstenite_ websockets. It mainly enables working with rust wasm code and communicating over a framed stream of bytes. This crate provides the functionality for non-WASM targets (eg. server side).
+This crate provides AsyncRead/Write over _async-tungstenite_ websockets. It mainly enables working with rust wasm code and communicating over a framed stream of bytes. This crate provides the functionality for non-WASM targets (eg. server side).
 There is a WASM version [available here](https://crates.io/crates/ws_stream_wasm) for the client side.
 
 There are currently 2 versions of the AsyncRead/Write traits. The _futures-rs_ version and the _tokio_ version. This crate implements the _futures-rs_ version only for now. We will see how the ecosystem evolves and adapt. This means you can frame your connection with the [`futures-codec`](https://crates.io/crates/futures_codec) crate. You can send arbitrary rust structs using [`futures_cbor_codec`](https://crates.io/crates/futures_cbor_codec). Know that the interface of _futures-codec_ is identical to the _tokio-codec_ one, so converting a codec is trivial.
 
-You might wonder, why not just serialize your struct and send it in websocket messages. First of all, on wasm there wasn't a convenient websocket rust crate before I released _ws_stream_wasm_, even without AsyncRead/Write. Next, this allows you to keep your code generic by just taking AsyncRead/Write instead of adapting it to a specific protocol like websockets, which is especially useful in library crates.
+You might wonder, why not just serialize your struct and send it in websocket messages. First of all, on wasm there wasn't a convenient websocket rust crate before I released _ws_stream_wasm_, even without AsyncRead/Write. Next, this allows you to keep your code generic by just taking AsyncRead/Write instead of adapting it to a specific protocol like websockets, which is especially useful in library crates. Furthermore you don't need to deal with the quirks of a websocket protocol and library. This just works almost like any other async byte stream (exception: [closing the connection](#how-to-close-a-connection)). There is a little bit of extra overhead due to this indirection, but it should be small.
 
-Currently _tokio-tungstenite_ is still on futures 0.1, so frequent changes are expected in the upcoming months and this will remain in alpha until the ecosystem stabelizes somewhat.
-
-_ws_stream_tungstenite_ works on top of _tokio-tungstenite_, so you will have to use the API from _tokio-tungstenite_ to setup your
-connection and pass the [`WebSocketStream`](tokio_tungstenite::WebSocketStream) to [`WsStream`].
+_ws_stream_tungstenite_ works on top of _async-tungstenite_, so you will have to use the API from _async-tungstenite_ to setup your
+connection and pass the [`WebSocketStream`](async_tungstenite::WebSocketStream) to [`WsStream`].
 
 ## Table of Contents
 
@@ -39,8 +37,6 @@ connection and pass the [`WebSocketStream`](tokio_tungstenite::WebSocketStream) 
 
 ## Install
 
-_ws_stream_tungstenite_ will probably remain on an alpha version until _tokio-tungstenite_ switches to tokio 0.2.
-
 With [cargo add](https://github.com/killercup/cargo-edit):
 `cargo add ws_stream_tungstenite`
 
@@ -48,14 +44,14 @@ With [cargo yaml](https://gitlab.com/storedbox/cargo-yaml):
 ```yaml
 dependencies:
 
-  ws_stream_tungstenite: ^0.1-alpha
+  ws_stream_tungstenite: ^0.1
 ```
 
 With raw Cargo.toml
 ```toml
 [dependencies]
 
-   ws_stream_tungstenite = "0.1-alpha"
+   ws_stream_tungstenite = "0.1"
 ```
 
 ### Upgrade
@@ -66,15 +62,22 @@ Please check out the [changelog](https://github.com/najamelan/ws_stream_tungsten
 
 This crate has few dependencies. Cargo will automatically handle it's dependencies for you.
 
-Note that we currently depend on both futures and tokio 0.1, which adds some bloat. Hopefully it won't take to long before we can drop the 0.1 stuff forever.
-
-Warning: Currently we are waiting for bug fixes to be released in __tungstenite__. We use the following patch section. You should probably add that as well.
 ```yaml
-patch:
+dependencies:
 
-  crates-io:
+  # public deps. Bump major version if you change their version number here.
+  #
+  futures           : { version: ^0.3, default-features: false }
+  log               : ^0.4
+  tungstenite       : ^0.10
+  pharos            : ^0.4
+  async-tungstenite : ^0.4
+  tokio             : { version: ^0.2, optional: true }
 
-    tungstenite   : { git: "https://github.com/najamelan/tungstenite-rs"   }
+  # private deps
+  #
+  pin-utils         : ^0.1.0-alpha
+  bitflags          : ^1
 ```
 
 ### Features
@@ -148,6 +151,7 @@ async fn run()
 
 
 ### How to close a connection
+
 The websocket RFC specifies the close handshake, summarized as follows:
 - when an endpoint wants to close the connection, it sends a close frame and after that it sends no more data.
   Since the other endpoint might still be sending data, it's best to continue processing incoming data, until:
@@ -160,13 +164,15 @@ just polling the stream will make sure the connection is kept until the handshak
 returns `None`, you're good to drop it.
 
 If you want to initiate the close, call close on the sink. From then on, the situation is identical to above.
-Just poll the stream until it returns None and you're good to go.
+Just poll the stream until it returns `None` and you're good to go.
 
-Tungstenite will return None on the client only when the server closes the underlying connection, so it will
+Tungstenite will return `None` on the client only when the server closes the underlying connection, so it will
 make sure you respect the websocket protocol.
 
 If you initiate the close handshake, you might want to race a timeout and drop the connection if the remote
-endpoint doesn't finish the close handshake in a timely manner. See the close.rs example in [examples directory of the repository](https://github.com/najamelan/ws_stream_tungstenite/tree/master/examples) for how to do that.
+endpoint doesn't finish the close handshake in a timely manner. See the close.rs example in
+[examples directory of the repository](https://github.com/najamelan/ws_stream_tungstenite/tree/master/examples)
+for how to do that.
 
 
 ### Error handling
@@ -188,18 +194,18 @@ Api documentation can be found on [docs.rs](https://docs.rs/ws_stream_tungstenit
 
 
 ## References
+
 The reference documents for understanding websockets and how the browser handles them are:
 - [RFC 6455 - The WebSocket Protocol](https://tools.ietf.org/html/rfc6455)
 - security of ws: https://blog.securityevaluators.com/websockets-not-bound-by-cors-does-this-mean-2e7819374acc?gi=e4a712f5f982
 - another: https://www.christian-schneider.net/CrossSiteWebSocketHijacking.html
 
+
 ## Contributing
 
-This repository accepts contributions. Ideas, questions, feature requests and bug reports can be filed through Github issues.
+Please check out the [contribution guidelines](https://github.com/najamelan/ws_stream_tungstenite/blob/master/CONTRIBUTING.md).
 
-Pull Requests are welcome on Github. By committing pull requests, you accept that your code might be modified and reformatted to fit the project coding style or to improve the implementation. Please discuss what you want to see modified before filing a pull request if you don't want to be doing work that might be rejected.
 
-Please file PR's against the `dev` branch, don't forget to update the changelog and the documentation.
 
 ### Testing
 

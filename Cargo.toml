@@ -54,7 +54,7 @@ version = "^0.2"
 
 [features]
 default = []
-external_doc = []
+docs = []
 tokio_io = ["tokio"]
 
 [package]
@@ -63,6 +63,7 @@ categories = []
 description = "Provide AsyncRead/AsyncWrite over Tungstenite WebSockets"
 documentation = "https://docs.rs/ws_stream_tungstenite"
 edition = "2018"
+exclude = ["tests", "examples"]
 homepage = "https://github.com/najamelan/ws_stream_tungstenite"
 keywords = ["websocket", "tokio", "stream", "async", "futures"]
 license = "Unlicense"
@@ -74,7 +75,7 @@ version = "0.1.0"
 [package.metadata]
 [package.metadata.docs]
 [package.metadata.docs.rs]
-features = ["external_doc"]
+features = ["docs"]
 
 [profile]
 [profile.release]

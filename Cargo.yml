@@ -22,11 +22,12 @@ package:
   readme        : README.md
   keywords      : [ websocket, tokio, stream, async, futures ]
   categories    : []
+  exclude       : [ tests, examples ]
 
   metadata:
     docs:
       rs:
-        features: [ external_doc ]
+        features: [ docs ]
 
 badges:
 
@@ -43,7 +44,7 @@ features:
 
   # only used internally, don't use
   #
-  external_doc: []
+  docs: []
 
 
 dependencies:

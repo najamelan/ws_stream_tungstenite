@@ -26,10 +26,8 @@ matrix:
 
   include:
 
-    # This won't work because we use a nightly feature in dev-dependencies and the feature leaks:
-    #
-    # - rust  : stable
-    #   script: cargo check
+    - rust  : stable
+      script: cargo check
 
     - os: linux
 

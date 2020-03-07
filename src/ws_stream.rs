@@ -12,7 +12,16 @@ pub struct WsStream<S: AsyncRead + AsyncWrite + Unpin>
 }
 
 
-impl<S: AsyncRead + AsyncWrite + Unpin> WsStream<S>
+#[derive(Debug, Clone)]
+//
+enum ReadState
+{
+	Ready { chunk: Vec<u8>, chunk_start: usize } ,
+	PendingChunk                                 ,
+}
+
+
+impl<S> WsStream<S> where S: AsyncRead + AsyncWrite + Unpin
 {
 	/// Create a new WsStream.
 	//
@@ -24,136 +33,8 @@ impl<S: AsyncRead + AsyncWrite + Unpin> WsStream<S>
 			state : ReadState::PendingChunk
 		}
 	}
-}
 
-
-
-impl<S: AsyncRead + AsyncWrite + Unpin> fmt::Debug for WsStream<S>
-{
-	fn fmt( &self, f: &mut fmt::Formatter<'_> ) -> fmt::Result
-	{
-		write!( f, "WsStream over Tungstenite" )
-	}
-}
-
-
-
-
-/// ### Errors
-///
-/// The following errors can be returned when writing to the stream:
-///
-/// - [`io::ErrorKind::NotConnected`]: This means that the connection is already closed. You should
-///   drop it. It is safe to drop the underlying connection.
-///
-/// - [`io::ErrorKind::InvalidData`]: This means that a tungstenite::error::Capacity occurred. This means that
-///   you send in a buffer bigger than the maximum message size configured on the underlying websocket connection.
-///   If you did not set it manually, the default for tungstenite is 64MB.
-///
-/// - other std::io::Error's generally mean something went wrong on the underlying transport. Consider these fatal
-///   and just drop the connection.
-//
-impl<S: AsyncRead + AsyncWrite + Unpin> AsyncWrite for WsStream<S>
-{
-	/// Will always flush the underlying socket. Will always create an entire Websocket message from every write,
-	/// so call with a sufficiently large buffer if you have performance problems.
-	//
-	fn poll_write( mut self: Pin<&mut Self>, cx: &mut Context<'_>, buf: &[u8] ) -> Poll< io::Result<usize> >
-	{
-		trace!( "{:?}: AsyncWrite - poll_write", self );
-
-		let res = ready!( Pin::new( &mut self.inner ).poll_ready(cx) );
-
-		if let Err( e ) = res
-		{
-			trace!( "{:?}: AsyncWrite - poll_write SINK not READY", self );
-
-			return Poll::Ready(Err( e ))
-		}
-
-
-		// FIXME: avoid extra copy?
-		// would require a different signature of both AsyncWrite and Tungstenite (Bytes from bytes crate for example)
-		//
-		match Pin::new( &mut self.inner ).start_send( buf.into() )
-		{
-			Ok (_) =>
-			{
-				// The Compat01As03Sink always keeps one item buffered. Also, client code like
-				// futures-codec and tokio-codec turn a flush on their sink in a poll_write here.
-				// Combinators like CopyBufInto will only call flush after their entire input
-				// stream is exhausted.
-				// We actually don't buffer here, but always create an entire websocket message from the
-				// buffer we get in poll_write, so there is no reason not to flush here, especially
-				// since the sink will always buffer one item until flushed.
-				// This means the burden is on the caller to call with a buffer of sufficient size
-				// to avoid perf problems, but there is BufReader and BufWriter in the futures library to
-				// help with that if necessary.
-				//
-				// We will ignore the Pending return from the flush, since we took the data and
-				// must return how many bytes we took. The client should not try to send this data again.
-				// This does mean there might be a spurious wakeup, TODO: we should test that.
-				// We could supply a dummy context to avoid the wakup.
-				//
-				// So, flush!
-				//
-				let _ = Pin::new( &mut self.inner ).poll_flush( cx );
-
-				trace!( "{:?}: AsyncWrite - poll_write, wrote {} bytes", self, buf.len() );
-
-				Poll::Ready(Ok ( buf.len() ))
-			}
-
-			Err(e) => Poll::Ready(Err( e )),
-		}
-	}
-
-
-	fn poll_flush(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll< io::Result<()> >
-	{
-		trace!( "{:?}: AsyncWrite - poll_flush", self );
-
-		match ready!( Pin::new( &mut self.inner ).poll_flush(cx) )
-		{
-			Ok (_) => Poll::Ready(Ok ( () )) ,
-			Err(e) => Poll::Ready(Err( e  )) ,
-		}
-	}
-
-
-	fn poll_close( mut self: Pin<&mut Self>, cx: &mut Context<'_> ) -> Poll< io::Result<()> >
-	{
-		trace!( "{:?}: AsyncWrite - poll_close", self );
-
-		ready!( Pin::new( &mut self.inner ).poll_close( cx ) ).into()
-	}
-}
-
-
-
-
-
-
-#[derive(Debug, Clone)]
-//
-enum ReadState
-{
-	Ready { chunk: Vec<u8>, chunk_start: usize } ,
-	PendingChunk                                 ,
-}
-
-/// When None is returned, it means it is safe to drop the underlying connection.
-///
-/// TODO: can we not just save an IntoAsyncRead on self instead of the TungWebSocket?
-///       that way we don't need to duplicate the algorithm here?
-///
-/// ### Errors
-///
-/// TODO: document errors
-//
-impl<S: AsyncRead + AsyncWrite + Unpin> AsyncRead  for WsStream<S>
-{
-	fn poll_read( mut self: Pin<&mut Self>, cx: &mut Context<'_>, buf: &mut [u8] ) -> Poll< io::Result<usize> >
+	fn poll_read_impl( mut self: Pin<&mut Self>, cx: &mut Context<'_>, buf: &mut [u8] ) -> Poll< io::Result<usize> >
 	{
 		trace!( "WsStream: read called" );
 
@@ -211,6 +92,193 @@ impl<S: AsyncRead + AsyncWrite + Unpin> AsyncRead  for WsStream<S>
 				}
 			}
 		}}
+	}
+
+
+	fn poll_write_impl( mut self: Pin<&mut Self>, cx: &mut Context<'_>, buf: &[u8] ) -> Poll< io::Result<usize> >
+	{
+		trace!( "{:?}: AsyncWrite - poll_write", self );
+
+		let res = ready!( Pin::new( &mut self.inner ).poll_ready(cx) );
+
+		if let Err( e ) = res
+		{
+			trace!( "{:?}: AsyncWrite - poll_write SINK not READY", self );
+
+			return Poll::Ready(Err( e ))
+		}
+
+
+		// FIXME: avoid extra copy?
+		// would require a different signature of both AsyncWrite and Tungstenite (Bytes from bytes crate for example)
+		//
+		match Pin::new( &mut self.inner ).start_send( buf.into() )
+		{
+			Ok (_) =>
+			{
+				// The Compat01As03Sink always keeps one item buffered. Also, client code like
+				// futures-codec and tokio-codec turn a flush on their sink in a poll_write here.
+				// Combinators like CopyBufInto will only call flush after their entire input
+				// stream is exhausted.
+				// We actually don't buffer here, but always create an entire websocket message from the
+				// buffer we get in poll_write, so there is no reason not to flush here, especially
+				// since the sink will always buffer one item until flushed.
+				// This means the burden is on the caller to call with a buffer of sufficient size
+				// to avoid perf problems, but there is BufReader and BufWriter in the futures library to
+				// help with that if necessary.
+				//
+				// We will ignore the Pending return from the flush, since we took the data and
+				// must return how many bytes we took. The client should not try to send this data again.
+				// This does mean there might be a spurious wakeup, TODO: we should test that.
+				// We could supply a dummy context to avoid the wakup.
+				//
+				// So, flush!
+				//
+				let _ = Pin::new( &mut self.inner ).poll_flush( cx );
+
+				trace!( "{:?}: AsyncWrite - poll_write, wrote {} bytes", self, buf.len() );
+
+				Poll::Ready(Ok ( buf.len() ))
+			}
+
+			Err(e) => Poll::Ready(Err( e )),
+		}
+	}
+
+
+	fn poll_flush_impl(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll< io::Result<()> >
+	{
+		trace!( "{:?}: AsyncWrite - poll_flush", self );
+
+		match ready!( Pin::new( &mut self.inner ).poll_flush(cx) )
+		{
+			Ok (_) => Poll::Ready(Ok ( () )) ,
+			Err(e) => Poll::Ready(Err( e  )) ,
+		}
+	}
+
+
+	fn poll_close_impl( mut self: Pin<&mut Self>, cx: &mut Context<'_> ) -> Poll< io::Result<()> >
+	{
+		trace!( "{:?}: AsyncWrite - poll_close", self );
+
+		ready!( Pin::new( &mut self.inner ).poll_close( cx ) ).into()
+	}
+}
+
+
+
+impl<S> fmt::Debug for WsStream<S> where S: AsyncRead + AsyncWrite + Unpin
+{
+	fn fmt( &self, f: &mut fmt::Formatter<'_> ) -> fmt::Result
+	{
+		write!( f, "WsStream over Tungstenite" )
+	}
+}
+
+
+
+
+/// ### Errors
+///
+/// The following errors can be returned when writing to the stream:
+///
+/// - [`io::ErrorKind::NotConnected`]: This means that the connection is already closed. You should
+///   drop it. It is safe to drop the underlying connection.
+///
+/// - [`io::ErrorKind::InvalidData`]: This means that a tungstenite::error::Capacity occurred. This means that
+///   you send in a buffer bigger than the maximum message size configured on the underlying websocket connection.
+///   If you did not set it manually, the default for tungstenite is 64MB.
+///
+/// - other std::io::Error's generally mean something went wrong on the underlying transport. Consider these fatal
+///   and just drop the connection.
+//
+impl<S> AsyncWrite for WsStream<S> where S: AsyncRead + AsyncWrite + Unpin
+{
+	/// Will always flush the underlying socket. Will always create an entire Websocket message from every write,
+	/// so call with a sufficiently large buffer if you have performance problems.
+	//
+	fn poll_write( self: Pin<&mut Self>, cx: &mut Context<'_>, buf: &[u8] ) -> Poll< io::Result<usize> >
+	{
+		self.poll_write_impl( cx, buf )
+	}
+
+
+	fn poll_flush( self: Pin<&mut Self>, cx: &mut Context<'_> ) -> Poll< io::Result<()> >
+	{
+		self.poll_flush_impl( cx )
+	}
+
+
+	fn poll_close( self: Pin<&mut Self>, cx: &mut Context<'_> ) -> Poll< io::Result<()> >
+	{
+		self.poll_close_impl( cx )
+	}
+}
+
+
+#[ cfg( feature = "tokio_io" ) ]
+//
+#[ cfg_attr( feature = "docs", doc(cfg( feature = "tokio_io" )) ) ]
+//
+impl<S> TokAsyncWrite for WsStream<S> where S: AsyncRead + AsyncWrite + Unpin
+{
+	fn poll_write( self: Pin<&mut Self>, cx: &mut Context<'_>, buf: &[u8] ) -> Poll< io::Result<usize> >
+	{
+		self.poll_write_impl( cx, buf )
+	}
+
+
+	fn poll_flush( self: Pin<&mut Self>, cx: &mut Context<'_> ) -> Poll< io::Result<()> >
+	{
+		self.poll_flush_impl( cx )
+	}
+
+
+	fn poll_shutdown( self: Pin<&mut Self>, cx: &mut Context<'_> ) -> Poll< io::Result<()> >
+	{
+		self.poll_close_impl( cx )
+	}
+}
+
+
+
+
+
+
+
+
+/// When None is returned, it means it is safe to drop the underlying connection.
+///
+/// TODO: This will only read at most one websocket message at a time. It would be possible to try
+/// and read more, but the next poll on the stream might return pending, and then cause a
+/// spurious wakeup sometime later even though we can't return pending from this, because
+/// we did read some. It could only be a performance issue (reducing throughput), so for now
+/// we leave it like this, but later we might try to benchmark and test this thoroughly to
+/// see if it is worth changing.
+///
+/// ### Errors
+///
+/// TODO: document errors
+//
+impl<S> AsyncRead  for WsStream<S> where S: AsyncRead + AsyncWrite + Unpin
+{
+	fn poll_read( self: Pin<&mut Self>, cx: &mut Context<'_>, buf: &mut [u8] ) -> Poll< io::Result<usize> >
+	{
+		self.poll_read_impl( cx, buf )
+	}
+}
+
+
+#[ cfg( feature = "tokio_io" ) ]
+//
+#[ cfg_attr( feature = "docs", doc(cfg( feature = "tokio_io" )) ) ]
+//
+impl<S> TokAsyncRead for WsStream<S> where S: AsyncRead + AsyncWrite + Unpin
+{
+	fn poll_read( self: Pin<&mut Self>, cx: &mut Context<'_>, buf: &mut [u8] ) -> Poll< io::Result<usize> >
+	{
+		self.poll_read_impl( cx, buf )
 	}
 }
 

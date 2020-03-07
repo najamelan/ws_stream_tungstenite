@@ -10,7 +10,7 @@ package:
   # - merge dev branch into master
   # - create git tag
   #
-  version       : 0.1.0-alpha.5
+  version       : 0.1.0
   name          : ws_stream_tungstenite
   edition       : '2018'
   authors       : [ Naja Melan <najamelan@autistici.org> ]
@@ -37,6 +37,10 @@ features:
 
   default: []
 
+  # Implement AsyncRead/AsyncWrite from tokio
+  #
+  tokio_io: [ tokio ]
+
   # only used internally, don't use
   #
   external_doc: []
@@ -46,11 +50,12 @@ dependencies:
 
   # public deps. Bump major version if you change their version number here.
   #
-  futures           : { version: ^0.3, default-features: false, features: [io-compat, compat] }
+  futures           : { version: ^0.3, default-features: false }
   log               : ^0.4
   tungstenite       : ^0.10
   pharos            : ^0.4
   async-tungstenite : ^0.4
+  tokio             : { version: ^0.2, optional: true }
 
   # private deps
   #
@@ -72,6 +77,7 @@ dev-dependencies:
   futures_ringbuf     : ^0.2
   pretty_assertions   : ^0.6
   tokio               : { version: ^0.2, default-features: false, features: [ tcp, stream, rt-core, macros ] }
+  tokio-util          : { version: ^0.2, default-features: false, features: [ codec ] }
   url                 : ^2
 
 profile:

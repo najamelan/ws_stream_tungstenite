@@ -56,6 +56,16 @@ mod import
 	};
 
 
+
+	#[ cfg( feature = "tokio" ) ]
+	//
+	pub(crate) use
+	{
+		tokio::io::{ AsyncRead as TokAsyncRead, AsyncWrite as TokAsyncWrite },
+	};
+
+
+
 	#[ cfg( test ) ]
 	//
 	pub(crate) use

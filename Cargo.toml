@@ -22,6 +22,11 @@ version = "^0.3"
 optional = true
 version = "^0.2"
 
+[dependencies.ws_stream_io]
+features = ["pharos"]
+path = "../ws_stream_io"
+version = "^0.1"
+
 [dev-dependencies]
 assert_matches = "^1.3"
 async_progress = "^0.1"
@@ -55,11 +60,11 @@ version = "^0.2"
 [features]
 default = []
 docs = []
-tokio_io = ["tokio"]
+tokio_io = ["tokio", "ws_stream_io/tokio_io"]
 
 [package]
 authors = ["Naja Melan <najamelan@autistici.org>"]
-categories = []
+categories = ["asynchronous", "network-programming"]
 description = "Provide AsyncRead/AsyncWrite over Tungstenite WebSockets"
 documentation = "https://docs.rs/ws_stream_tungstenite"
 edition = "2018"

@@ -2,6 +2,8 @@ package:
 
   # When releasing to crates.io:
   #
+  # - last check for all TODO, FIXME, expect, unwrap.
+  # - run clippy
   # - Update CHANGELOG.md.
   # - Update version numbers in Cargo.yml, Cargo.toml, install section of readme.
   # - verify CI result
@@ -21,7 +23,7 @@ package:
   documentation : https://docs.rs/ws_stream_tungstenite
   readme        : README.md
   keywords      : [ websocket, tokio, stream, async, futures ]
-  categories    : []
+  categories    : [ asynchronous, network-programming ]
   exclude       : [ tests, examples ]
 
   metadata:

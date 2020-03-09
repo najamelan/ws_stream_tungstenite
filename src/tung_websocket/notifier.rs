@@ -71,10 +71,11 @@ impl Notifier
 	}
 
 
+	// try to send out queued events.
+	//
 	pub(crate) fn run( &mut self, cx: &mut Context<'_> ) -> Poll< Result<(), ()> >
 	{
 		let mut pharos = Pin::new( &mut self.pharos );
-
 
 		match self.state
 		{
@@ -100,7 +101,7 @@ impl Notifier
 						{
 							// note we can only get here if the queue isn't empty, so unwrap
 							//
-							if let Err(_e) = pharos.as_mut().start_send( self.events.pop_front().unwrap() )
+							if let Err(_e) = pharos.as_mut().start_send( self.events.pop_front().expect( "pop queued event." ) )
 							{
 								self.state = State::Closed;
 

@@ -1,9 +1,10 @@
 # TODO
 
-- documentation
-  - make sure features are documented
+
 - vectored io?
 - fuzz testing async-tungstenite
+- documentation
+  - make sure features are documented
 - CI
 - clean up ws_stream_wasm
 - check crate template for changes.

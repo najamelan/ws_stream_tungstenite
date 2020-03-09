@@ -48,6 +48,12 @@ impl<S> AsyncWrite for WsStream<S> where S: AsyncRead + AsyncWrite + Unpin
 	}
 
 
+	fn poll_write_vectored( mut self: Pin<&mut Self>, cx: &mut Context<'_>, bufs: &[ IoSlice<'_> ] ) -> Poll< io::Result<usize> >
+	{
+		AsyncWrite::poll_write_vectored( Pin::new( &mut self.inner ), cx, bufs )
+	}
+
+
 	fn poll_flush( mut self: Pin<&mut Self>, cx: &mut Context<'_> ) -> Poll< io::Result<()> >
 	{
 		AsyncWrite::poll_flush( Pin::new( &mut self.inner ), cx )
@@ -87,29 +93,16 @@ impl<S> TokAsyncWrite for WsStream<S> where S: AsyncRead + AsyncWrite + Unpin
 
 
 
-
-
-
-
-
-/// When None is returned, it means it is safe to drop the underlying connection.
-///
-/// TODO: This will only read at most one websocket message at a time. It would be possible to try
-/// and read more, but the next poll on the stream might return pending, and then cause a
-/// spurious wakeup sometime later even though we can't return pending from this, because
-/// we did read some. It could only be a performance issue (reducing throughput), so for now
-/// we leave it like this, but later we might try to benchmark and test this thoroughly to
-/// see if it is worth changing.
-///
-/// ### Errors
-///
-/// TODO: document errors
-//
 impl<S> AsyncRead  for WsStream<S> where S: AsyncRead + AsyncWrite + Unpin
 {
 	fn poll_read( mut self: Pin<&mut Self>, cx: &mut Context<'_>, buf: &mut [u8] ) -> Poll< io::Result<usize> >
 	{
 		AsyncRead::poll_read( Pin::new( &mut self.inner), cx, buf )
+	}
+
+	fn poll_read_vectored( mut self: Pin<&mut Self>, cx: &mut Context<'_>, bufs: &mut [IoSliceMut<'_>] ) -> Poll< io::Result<usize> >
+	{
+		AsyncRead::poll_read_vectored( Pin::new( &mut self.inner), cx, bufs )
 	}
 }
 

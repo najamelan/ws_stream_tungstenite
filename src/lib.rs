@@ -46,7 +46,7 @@ mod import
 		bitflags          :: { bitflags                                                                                               } ,
 		futures           :: { prelude::{ Stream, Sink, AsyncRead, AsyncWrite }, ready, stream::{ SplitSink, SplitStream, StreamExt } } ,
 		log               :: { trace, debug, error, warn                                                                              } ,
-		std               :: { io, pin::Pin, fmt, borrow::Cow, error::Error as ErrorTrait, ops::Deref                                 } ,
+		std               :: { io, io::{ IoSlice, IoSliceMut }, pin::Pin, fmt, borrow::Cow, error::Error as ErrorTrait, ops::Deref    } ,
 		std               :: { collections::VecDeque, sync::Arc, task::{ Context, Poll }                                              } ,
 		async_tungstenite :: { WebSocketStream as ATungSocket                                                                         } ,
 		tungstenite       :: { Message as TungMessage, Error as TungErr, protocol::{ CloseFrame, frame::coding::CloseCode }           } ,

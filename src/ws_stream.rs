@@ -7,7 +7,7 @@ use crate::{ import::*, tung_websocket::TungWebSocket, WsEvent, Error };
 //
 pub struct WsStream<S: AsyncRead + AsyncWrite + Unpin>
 {
-	inner: WsIo< TungWebSocket<S>, Vec<u8> >,
+	inner: IoStream< TungWebSocket<S>, Vec<u8> >,
 }
 
 
@@ -20,7 +20,7 @@ impl<S> WsStream<S> where S: AsyncRead + AsyncWrite + Unpin
 	{
 		Self
 		{
-			inner : WsIo::new( TungWebSocket::new( inner ) ),
+			inner : IoStream::new( TungWebSocket::new( inner ) ),
 		}
 	}
 }

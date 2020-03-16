@@ -51,7 +51,7 @@ mod import
 		async_tungstenite :: { WebSocketStream as ATungSocket                                                                         } ,
 		tungstenite       :: { Message as TungMessage, Error as TungErr, protocol::{ CloseFrame, frame::coding::CloseCode }           } ,
 		pharos            :: { Observable, ObserveConfig, Events, Pharos                                                              } ,
-		ws_stream_io      :: { WsIo                                                                                                   } ,
+		async_io_stream   :: { IoStream                                                                                               } ,
 	};
 
 

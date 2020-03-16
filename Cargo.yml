@@ -42,7 +42,7 @@ features:
 
   # Implement AsyncRead/AsyncWrite from tokio
   #
-  tokio_io: [ tokio, ws_stream_io/tokio_io ]
+  tokio_io: [ tokio, async_io_stream/tokio_io ]
 
   # only used internally, don't use
   #
@@ -64,7 +64,7 @@ dependencies:
   #
   pin-utils         : ^0.1.0-alpha
   bitflags          : ^1
-  ws_stream_io      : { version: ^0.1, path: ../ws_stream_io, features: [ pharos ] }
+  async_io_stream   : { version: ^0.1, path: ../async_io_stream, features: [ map_pharos ] }
 
 
 dev-dependencies:

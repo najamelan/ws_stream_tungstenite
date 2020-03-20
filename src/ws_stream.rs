@@ -5,7 +5,7 @@ use crate::{ import::*, tung_websocket::TungWebSocket, WsEvent, Error };
 /// Please look at the documentation of the impls for those traits below for details (rustdoc will
 /// collapse them).
 //
-pub struct WsStream<S: AsyncRead + AsyncWrite + Unpin>
+pub struct WsStream<S> where S: AsyncRead + AsyncWrite + Unpin
 {
 	inner: IoStream< TungWebSocket<S>, Vec<u8> >,
 }
@@ -118,6 +118,23 @@ impl<S> TokAsyncRead for WsStream<S> where S: AsyncRead + AsyncWrite + Unpin
 		TokAsyncRead::poll_read( Pin::new( &mut self.inner), cx, buf )
 	}
 }
+
+
+
+impl<S> AsyncBufRead for WsStream<S> where S: AsyncRead + AsyncWrite + Unpin
+{
+	fn poll_fill_buf( self: Pin<&mut Self>, cx: &mut Context<'_> ) -> Poll< io::Result<&[u8]> >
+	{
+		Pin::new( &mut self.get_mut().inner ).poll_fill_buf( cx )
+	}
+
+
+	fn consume( mut self: Pin<&mut Self>, amount: usize )
+	{
+		Pin::new( &mut self.inner ).consume( amount )
+	}
+}
+
 
 
 impl<S> Observable< WsEvent > for WsStream<S> where S: AsyncRead + AsyncWrite + Unpin

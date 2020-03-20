@@ -39,7 +39,7 @@ bitflags!
 /// A wrapper around a WebSocket provided by tungstenite. This provides Stream/Sink Vec<u8> to
 /// simplify implementing AsyncRead/AsyncWrite on top of tokio-tungstenite.
 //
-pub(crate) struct TungWebSocket<S: AsyncRead + AsyncWrite + Unpin>
+pub(crate) struct TungWebSocket<S>  where S: AsyncRead + AsyncWrite + Unpin
 {
 	sink  : SplitSink  < ATungSocket<S>, TungMessage > ,
 	stream: SplitStream< ATungSocket<S> >              ,
@@ -162,7 +162,7 @@ impl<S> TungWebSocket<S> where S: AsyncRead + AsyncWrite + Unpin
 
 
 
-impl<S: AsyncRead + AsyncWrite + Unpin> Stream for TungWebSocket<S>
+impl<S: Unpin> Stream for TungWebSocket<S> where S: AsyncRead + AsyncWrite
 {
 	type Item = Result<Vec<u8>, io::Error>;
 
@@ -410,7 +410,7 @@ impl<S: AsyncRead + AsyncWrite + Unpin> Stream for TungWebSocket<S>
 // eg. are there situations where the user still has to close manually? In principle a websocket is
 // a duplex connection, so we probably should not let this happen.
 //
-impl<S: AsyncRead + AsyncWrite + Unpin> Sink<Vec<u8>> for TungWebSocket<S>
+impl<S> Sink<Vec<u8>> for TungWebSocket<S> where S: AsyncRead + AsyncWrite + Unpin
 {
 	type Error = io::Error;
 

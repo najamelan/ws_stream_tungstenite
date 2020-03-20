@@ -65,9 +65,8 @@ dependencies:
 
   # private deps
   #
-  pin-utils         : ^0.1.0-alpha
   bitflags          : ^1
-  async_io_stream   : { version: ^0.1, path: ../async_io_stream, features: [ map_pharos ] }
+  async_io_stream   : { version: ^0.1, features: [ map_pharos ] }
 
 
 dev-dependencies:
@@ -86,6 +85,7 @@ dev-dependencies:
   tokio               : { version: ^0.2, default-features: false, features: [ tcp, stream, rt-core, macros ] }
   tokio-util          : { version: ^0.2, default-features: false, features: [ codec ] }
   url                 : ^2
+  pin-utils           : ^0.1.0-alpha
 
 
 build-dependencies:

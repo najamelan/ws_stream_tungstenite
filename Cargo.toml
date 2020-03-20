@@ -14,12 +14,10 @@ async-tungstenite = "^0.4"
 bitflags = "^1"
 log = "^0.4"
 pharos = "^0.4"
-pin-utils = "^0.1.0-alpha"
 tungstenite = "^0.10"
 
 [dependencies.async_io_stream]
 features = ["map_pharos"]
-path = "../async_io_stream"
 version = "^0.1"
 
 [dependencies.futures]
@@ -39,6 +37,7 @@ futures-test = "^0.3"
 futures-timer = "^3"
 futures_codec = "^0.4"
 futures_ringbuf = "^0.2"
+pin-utils = "^0.1.0-alpha"
 pretty_assertions = "^0.6"
 url = "^2"
 

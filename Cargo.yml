@@ -87,6 +87,12 @@ dev-dependencies:
   tokio-util          : { version: ^0.2, default-features: false, features: [ codec ] }
   url                 : ^2
 
+
+build-dependencies:
+
+  rustc_version: ^0.2
+
+
 profile:
 
   release:

@@ -69,7 +69,7 @@ impl<S> AsyncWrite for WsStream<S> where S: AsyncRead + AsyncWrite + Unpin
 
 #[ cfg( feature = "tokio_io" ) ]
 //
-#[ cfg_attr( feature = "docs", doc(cfg( feature = "tokio_io" )) ) ]
+#[ cfg_attr( nightly, doc(cfg( feature = "tokio_io" )) ) ]
 //
 impl<S> TokAsyncWrite for WsStream<S> where S: AsyncRead + AsyncWrite + Unpin
 {
@@ -109,7 +109,7 @@ impl<S> AsyncRead  for WsStream<S> where S: AsyncRead + AsyncWrite + Unpin
 
 #[ cfg( feature = "tokio_io" ) ]
 //
-#[ cfg_attr( feature = "docs", doc(cfg( feature = "tokio_io" )) ) ]
+#[ cfg_attr( nightly, doc(cfg( feature = "tokio_io" )) ) ]
 //
 impl<S> TokAsyncRead for WsStream<S> where S: AsyncRead + AsyncWrite + Unpin
 {

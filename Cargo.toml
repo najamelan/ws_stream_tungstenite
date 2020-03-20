@@ -6,6 +6,9 @@ status = "actively-developed"
 [badges.travis-ci]
 repository = "najamelan/ws_stream_tungstenite"
 
+[build-dependencies]
+rustc_version = "^0.2"
+
 [dependencies]
 async-tungstenite = "^0.4"
 bitflags = "^1"
@@ -81,6 +84,7 @@ version = "0.1.0"
 [package.metadata.docs]
 [package.metadata.docs.rs]
 features = ["docs"]
+targets = []
 
 [profile]
 [profile.release]

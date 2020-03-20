@@ -6,4 +6,4 @@ Please discuss what you want to see modified before filing a pull request if you
 
 # git workflow
 
-Please file PR's against the `dev` branch, don't forget to update the changelog and the documentation.
+Please file PR's against the `dev` branch, don't forget to update the documentation.

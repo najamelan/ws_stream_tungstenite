@@ -1,4 +1,4 @@
-#![type_length_limit="1597428"] // https://github.com/rust-lang/rust/issues/64496
+#![type_length_limit="1617743"] // https://github.com/rust-lang/rust/issues/64496
 
 // Verify whether we handle ping and pong frames correctly
 // Note that they can hold data, but as we provide AsyncRead/AsyncWrite, we generally don't

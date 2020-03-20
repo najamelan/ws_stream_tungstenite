@@ -30,11 +30,14 @@ package:
     docs:
       rs:
         features: [ docs ]
+        targets : []
+
 
 badges:
 
   maintenance : { status     : actively-developed              }
   travis-ci   : { repository : najamelan/ws_stream_tungstenite }
+
 
 features:
 

@@ -99,8 +99,6 @@ impl Closer
 		-> Poll< Result<(), ()> >
 
 	{
-		debug!( "in close because" );
-
 		match &self.state
 		{
 			State::Ready     => Ok (()).into() ,
@@ -115,15 +113,11 @@ impl Closer
 				{
 					Poll::Pending =>
 					{
-						warn!( "self.close_frame = Some( frame )" );
-
 						Poll::Pending
 					}
 
 					Poll::Ready(Err(e)) =>
 					{
-						error!( "{:?}", e );
-
 						ph.queue( WsEvent::Error( Arc::new( Error::from(e) )) );
 
 						self.state = State::SinkError;
@@ -132,14 +126,10 @@ impl Closer
 
 					Poll::Ready(Ok(())) =>
 					{
-						warn!( "start send of close frame" );
-
 						// Send the frame
 						//
 						if let Err(e) = Pin::new( &mut socket ).as_mut().start_send( TungMessage::Close( Some(frame.clone()) ) )
 						{
-							error!( "{:?}", e );
-
 							ph.queue( WsEvent::Error( Arc::new( Error::from(e) )) );
 
 							self.state = State::SinkError;
@@ -153,8 +143,6 @@ impl Closer
 						{
 							Poll::Pending =>
 							{
-								warn!( "TwState::Flushing" );
-
 								self.state = State::Flushing;
 
 								Poll::Pending
@@ -172,8 +160,6 @@ impl Closer
 
 							Poll::Ready(Err(e)) =>
 							{
-								error!( "{:?}", e );
-
 								ph.queue( WsEvent::Error( Arc::new( Error::from(e) )) );
 
 								self.state = State::SinkError;
@@ -194,8 +180,6 @@ impl Closer
 				{
 					Poll::Pending =>
 					{
-						warn!( "TwState::Flushing" );
-
 						self.state = State::Flushing;
 
 						Poll::Pending

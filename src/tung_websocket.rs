@@ -179,7 +179,7 @@ impl<S: Unpin> Stream for TungWebSocket<S> where S: AsyncRead + AsyncWrite
 	///
 	/// The following errors can be returned from this method:
 	///
-	/// - other std::io::Error's generally mean something went wrong on the underlying transport. Consider these fatal
+	/// - std::io::Error generally mean something went wrong on the underlying transport. Consider these fatal
 	///   and just drop the connection.
 	//
 	fn poll_next( mut self: Pin<&mut Self>, cx: &mut Context<'_> ) -> Poll< Option<Self::Item> >
@@ -320,8 +320,6 @@ impl<S: Unpin> Stream for TungWebSocket<S> where S: AsyncRead + AsyncWrite
 					//
 					TungErr::Protocol( ref string ) =>
 					{
-						error!( "Protocol error from Tungstenite: {}", string );
-
 						// If this returns pending, we don't want to recurse, the task will be woken up.
 						//
 						ready!( self.as_mut().send_closeframe( CloseCode::Protocol, string.clone(), cx ) );
@@ -340,8 +338,6 @@ impl<S: Unpin> Stream for TungWebSocket<S> where S: AsyncRead + AsyncWrite
 					//
 					TungErr::Utf8 =>
 					{
-						error!( "{}", &err );
-
 						let string = "Text messages are not supported";
 
 						self.queue_event( WsEvent::Error( Arc::new( WsErr::from(err) )) );

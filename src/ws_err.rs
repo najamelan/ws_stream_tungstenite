@@ -31,19 +31,22 @@ pub enum WsErr
 		source: io::Error
 	},
 
-	/// A websocket protocol error.
+	/// A websocket protocol error. On read it means the remote didn't respect the websocket protocol.
+	/// On write this means there's a bug in ws_stream_tungstenite and it will panic.
 	//
 	#[ error( "The remote committed a websocket protocol violation." )]
 	//
 	Protocol,
 
-	/// A websocket protocol error.
+	/// We received a websocket text message. As we are about turning the websocket connection into a
+	/// bytestream, this is probably unintended, and thus unsupported.
 	//
 	#[ error( "The remote sent a Text message. Only Binary messages are accepted." )]
 	//
 	ReceivedText,
 
-	/// Trying to work with an connection that is closed.
+	/// Trying to work with an connection that is closed. Only happens on writing. On reading
+	/// `poll_read` will just return `None`.
 	//
 	#[ error( "The connection is already closed." )]
 	//

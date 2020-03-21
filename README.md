@@ -18,6 +18,15 @@ You might wonder, why not just serialize your struct and send it in websocket me
 _ws_stream_tungstenite_ works on top of _async-tungstenite_, so you will have to use the API from _async-tungstenite_ to setup your
 connection and pass the [`WebSocketStream`](async_tungstenite::WebSocketStream) to [`WsStream`].
 
+**Limitations:**
+
+- No API is provided to send out Ping messages. Solving this would imply making a `WsMeta` type like
+  _ws_stream_wasm_.
+- Received text messages are considered an error. Another option we could consider is to return
+  these to client code out of band rather than including them in the data for `AsyncRead`/`AsyncWrite`.
+  This is also inconsistent with _ws_stream_wasm_ which calls `to_bytes` on them and includes the bytes
+  in the bytestream.
+
 ## Table of Contents
 
 - [Install](#install)
@@ -182,7 +191,9 @@ for how to do that.
 _ws_stream_tungstenite_ is about `AsyncRead`/`AsyncWrite`, so we only accept binary messages. If we receive a websocket text message,
 that's considered a protocol error.
 
-For detailed instructions, please have a look at the API docs for [`WsStream`]. Especially at the impls for AsyncRead/Write, which detail all possible errors you can get.
+For detailed instructions, please have a look at the API docs for [`WsStream`]. Especially at the impls for `AsyncRead`/`AsyncWrite`, which detail all possible errors you can get.
+
+Since `AsyncRead`/`AsyncWrite` only allow `std::io::Error` to be returned and on the stream some errors might not be fatal, but codecs will often consider any error to be fatal, errors are returned out of band through pharos. You should observe the `WsStream` and in the very least log any errors that are reported.
 
 
 ### Limitations
@@ -211,7 +222,7 @@ Please check out the [contribution guidelines](https://github.com/najamelan/ws_s
 
 ### Testing
 
-`cargo test`
+`cargo test --all-features`
 
 
 ### Code of conduct

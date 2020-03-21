@@ -2,10 +2,10 @@
 
 # 0.1.0 - 2019-03-21
 
-  - BREAKING_CHANGE: Switch to async_tungstenite as backend, we are now framework agnostic.
-  - BREAKING_CHANGE: Rename error type to WsErr.
+  - **BREAKING_CHANGE**: Switch to async_tungstenite as backend, we are now framework agnostic.
+  - **BREAKING_CHANGE**: Rename error type to WsErr.
 
-  - Implement tokio AsyncRead/Write for WsStream (Behind a feature flag).
+  - Implement tokio `AsyncRead`/`AsyncWrite` for WsStream (Behind a feature flag).
   - delegate implementation of `AsyncRead`/`AsyncWrite`/`AsyncBufRead` to _async_io_stream_. This allows
     sharing the functionality with _ws_stream_wasm_, fleshing it out to always fill and use entire buffers,
     polling the underlying stream several times if needed.

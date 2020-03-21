@@ -62,7 +62,6 @@ version = "^0.2"
 
 [features]
 default = []
-docs = []
 tokio_io = ["tokio", "async_io_stream/tokio_io"]
 
 [package]
@@ -83,7 +82,7 @@ version = "0.1.0"
 [package.metadata]
 [package.metadata.docs]
 [package.metadata.docs.rs]
-features = ["docs"]
+all-features = true
 targets = []
 
 [profile]

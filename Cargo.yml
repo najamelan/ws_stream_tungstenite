@@ -24,13 +24,13 @@ package:
   readme        : README.md
   keywords      : [ websocket, tokio, stream, async, futures ]
   categories    : [ asynchronous, network-programming ]
-  exclude       : [ tests, examples ]
+  exclude       : [ tests, examples, ci, .travis.yml, TODO.md, CONTRIBUTING.md, ARCHITECTURE.md ]
 
   metadata:
     docs:
       rs:
-        features: [ docs ]
-        targets : []
+        all-features: true
+        targets     : []
 
 
 badges:
@@ -46,10 +46,6 @@ features:
   # Implement AsyncRead/AsyncWrite from tokio
   #
   tokio_io: [ tokio, async_io_stream/tokio_io ]
-
-  # only used internally, don't use
-  #
-  docs: []
 
 
 dependencies:

@@ -152,7 +152,7 @@ impl Notifier
 
 						self.state = State::Closed;
 
-						return Err(()).into();
+						Err(()).into()
 					}
 
 					// We are really done

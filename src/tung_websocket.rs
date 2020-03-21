@@ -440,7 +440,7 @@ impl<S> Sink<Vec<u8>> for TungWebSocket<S> where S: AsyncRead + AsyncWrite + Unp
 	{
 		if self.state.contains( State::SINK_CLOSED )
 		{
-			return Err( io::ErrorKind::NotConnected.into() ).into()
+			return Err( io::ErrorKind::NotConnected.into() )
 		}
 
 

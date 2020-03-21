@@ -133,8 +133,6 @@ impl Closer
 							ph.queue( WsEvent::Error( Arc::new( e.into() )) );
 
 							self.state = State::SinkError;
-
-							().into()
 						}
 
 						// Flush

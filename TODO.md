@@ -1,7 +1,5 @@
 # TODO
 
-- documentation
-  - make sure features are documented
 - check crate template for changes.
 - CI
 - changelog

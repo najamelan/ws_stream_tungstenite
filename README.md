@@ -18,20 +18,13 @@ You might wonder, why not just serialize your struct and send it in websocket me
 _ws_stream_tungstenite_ works on top of _async-tungstenite_, so you will have to use the API from _async-tungstenite_ to setup your
 connection and pass the [`WebSocketStream`](async_tungstenite::WebSocketStream) to [`WsStream`].
 
-**Limitations:**
-
-- No API is provided to send out Ping messages. Solving this would imply making a `WsMeta` type like
-  _ws_stream_wasm_.
-- Received text messages are considered an error. Another option we could consider is to return
-  these to client code out of band rather than including them in the data for `AsyncRead`/`AsyncWrite`.
-  This is also inconsistent with _ws_stream_wasm_ which calls `to_bytes` on them and includes the bytes
-  in the bytestream.
 
 ## Table of Contents
 
 - [Install](#install)
   - [Upgrade](#upgrade)
   - [Dependencies](#dependencies)
+  - [Security](#security)
 - [Usage](#usage)
   - [Example](#example)
   - [How to close a connection](#how-to-close-a-connection)
@@ -89,15 +82,24 @@ dependencies:
   async_io_stream   : { version: ^0.1, features: [ map_pharos ] }
 ```
 
+### Security
+
+This crate uses `#![ forbid( unsafe_code ) ]`, but our dependencies don't.
+
+Make sure your codecs have a max message size.
+
+
 ### Features
 
 The `tokio_io` features enables implementing the `AsyncRead` and `AsyncWrite` traits from _tokio_.
+
 
 ## Usage
 
 Please have a look in the [examples directory of the repository](https://github.com/najamelan/ws_stream_tungstenite/tree/master/examples).
 
 The [integration tests](https://github.com/najamelan/ws_stream_tungstenite/tree/master/tests) are also useful.
+
 
 ### Example
 
@@ -198,7 +200,12 @@ Since `AsyncRead`/`AsyncWrite` only allow `std::io::Error` to be returned and on
 
 ### Limitations
 
-- no convenient support for closing with reason and code.
+- No API is provided to send out Ping messages. Solving this would imply making a `WsMeta` type like
+  _ws_stream_wasm_.
+- Received text messages are considered an error. Another option we could consider is to return
+  these to client code out of band rather than including them in the data for `AsyncRead`/`AsyncWrite`.
+  This is also inconsistent with _ws_stream_wasm_ which calls `to_bytes` on them and includes the bytes
+  in the bytestream.
 
 
 ### API
@@ -217,7 +224,6 @@ The reference documents for understanding websockets and how the browser handles
 ## Contributing
 
 Please check out the [contribution guidelines](https://github.com/najamelan/ws_stream_tungstenite/blob/master/CONTRIBUTING.md).
-
 
 
 ### Testing

@@ -1,5 +1,18 @@
 # Changelog
 
+# 0.1.0 - 2019-03-21
+
+  - BREAKING_CHANGE: Switch to async_tungstenite as backend, we are now framework agnostic.
+  - BREAKING_CHANGE: Rename error type to WsErr.
+
+  - Implement tokio AsyncRead/Write for WsStream (Behind a feature flag).
+  - delegate implementation of `AsyncRead`/`AsyncWrite`/`AsyncBufRead` to _async_io_stream_. This allows
+    sharing the functionality with _ws_stream_wasm_, fleshing it out to always fill and use entire buffers,
+    polling the underlying stream several times if needed.
+  - only build for default target on docs.rs.
+  - exclude unneeded files from package build.
+  - remove trace and debug statements.
+
 # 0.1.0-alpha.5 - 2019-11-14
 
   - update to futures 0.3.1.

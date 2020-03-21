@@ -67,7 +67,7 @@ dependencies:
   #
   bitflags          : ^1
   async_io_stream   : { version: ^0.1, features: [ map_pharos ] }
-
+  thiserror         : ^1
 
 dev-dependencies:
 

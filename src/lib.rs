@@ -27,15 +27,15 @@
 
 mod ws_stream ;
 mod ws_event  ;
-mod error     ;
+mod ws_err    ;
 
 pub(crate) mod tung_websocket;
 
 pub use
 {
-	self::ws_stream :: { WsStream         } ,
-	self::ws_event  :: { WsEvent          } ,
-	self::error     :: { Error, ErrorKind } ,
+	self::ws_stream :: { WsStream } ,
+	self::ws_event  :: { WsEvent  } ,
+	self::ws_err    :: { WsErr    } ,
 };
 
 
@@ -44,16 +44,17 @@ mod import
 {
 	pub(crate) use
 	{
-		bitflags          :: { bitflags                                                                                            } ,
-		futures           :: { prelude::{ Stream, Sink, AsyncRead, AsyncWrite, AsyncBufRead }                                      } ,
-		futures           :: { ready, stream::{ SplitSink, SplitStream, StreamExt }                                                } ,
-		log               :: { error                                                                                               } ,
-		std               :: { io, io::{ IoSlice, IoSliceMut }, pin::Pin, fmt, borrow::Cow, error::Error as ErrorTrait, ops::Deref } ,
-		std               :: { collections::VecDeque, sync::Arc, task::{ Context, Poll }                                           } ,
-		async_tungstenite :: { WebSocketStream as ATungSocket                                                                      } ,
-		tungstenite       :: { Message as TungMessage, Error as TungErr, protocol::{ CloseFrame, frame::coding::CloseCode }        } ,
-		pharos            :: { Observable, ObserveConfig, Events, Pharos                                                           } ,
-		async_io_stream   :: { IoStream                                                                                            } ,
+		bitflags          :: { bitflags                                                                                     } ,
+		futures           :: { prelude::{ Stream, Sink, AsyncRead, AsyncWrite, AsyncBufRead }                               } ,
+		futures           :: { ready, stream::{ SplitSink, SplitStream, StreamExt }                                         } ,
+		log               :: { error                                                                                        } ,
+		std               :: { io, io::{ IoSlice, IoSliceMut }, pin::Pin, fmt, borrow::Cow                                  } ,
+		std               :: { collections::VecDeque, sync::Arc, task::{ Context, Poll }                                    } ,
+		async_tungstenite :: { WebSocketStream as ATungSocket                                                               } ,
+		tungstenite       :: { Message as TungMessage, Error as TungErr, protocol::{ CloseFrame, frame::coding::CloseCode } } ,
+		pharos            :: { Observable, ObserveConfig, Events, Pharos                                                    } ,
+		async_io_stream   :: { IoStream                                                                                     } ,
+		thiserror         :: { Error                                                                                        } ,
 	};
 
 

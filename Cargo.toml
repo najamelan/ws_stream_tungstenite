@@ -14,6 +14,7 @@ async-tungstenite = "^0.4"
 bitflags = "^1"
 log = "^0.4"
 pharos = "^0.4"
+thiserror = "^1"
 tungstenite = "^0.10"
 
 [dependencies.async_io_stream]

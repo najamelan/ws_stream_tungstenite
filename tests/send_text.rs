@@ -39,7 +39,7 @@ async fn send_text()
 
 		match events.next().await.expect( "protocol error" )
 		{
-			WsEvent::Error( e ) => assert_eq!( &ErrorKind::ReceivedText, e.kind() ),
+			WsEvent::Error( e ) => assert!(matches!( *e, WsErr::ReceivedText )),
 			evt                 => assert!( false, "{:?}", evt ),
 		}
 

@@ -1,4 +1,4 @@
-use crate:: { import::*, WsEvent, Error };
+use crate:: { import::*, WsEvent, WsErr };
 
 
 // The different states we can be in.
@@ -173,7 +173,7 @@ impl Notifier
 
 impl Observable< WsEvent > for Notifier
 {
-	type Error = Error;
+	type Error = WsErr;
 
 	fn observe( &mut self, options: ObserveConfig< WsEvent > ) -> Result< Events< WsEvent >, Self::Error >
 	{

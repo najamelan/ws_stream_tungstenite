@@ -2,7 +2,7 @@
 //
 // ✔ notifiying errors through pharos
 //
-use crate :: { import::*, WsEvent, ErrorKind, tung_websocket::{ notifier::Notifier, closer::Closer } };
+use crate :: { import::*, WsEvent, WsErr, tung_websocket::{ notifier::Notifier, closer::Closer } };
 
 
 #[ test ]
@@ -58,7 +58,7 @@ fn notify_errors()
 			{
 				WsEvent::Error( e ) =>
 				{
-					assert_eq!( &ErrorKind::Protocol, e.kind() );
+					assert!( matches!( *e, WsErr::Protocol ));
 				}
 
 				_ => unreachable!( "expect closeframe" ),

@@ -1,4 +1,4 @@
-use crate::{ import::*, tung_websocket::TungWebSocket, WsEvent, Error };
+use crate::{ import::*, tung_websocket::TungWebSocket, WsEvent, WsErr };
 
 
 /// Takes a WebSocketStream from tokio-tungstenite and implements futures 0.3 AsyncRead/AsyncWrite.
@@ -139,7 +139,7 @@ impl<S> AsyncBufRead for WsStream<S> where S: AsyncRead + AsyncWrite + Unpin
 
 impl<S> Observable< WsEvent > for WsStream<S> where S: AsyncRead + AsyncWrite + Unpin
 {
-	type Error = Error;
+	type Error = WsErr;
 
 	fn observe( &mut self, options: ObserveConfig< WsEvent > ) -> Result< Events< WsEvent >, Self::Error >
 	{

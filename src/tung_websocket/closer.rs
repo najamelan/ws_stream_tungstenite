@@ -1,6 +1,6 @@
 use
 {
-	crate :: { import::*, WsEvent, Error } ,
+	crate :: { import::*, WsEvent, WsErr } ,
 	super :: { notifier::Notifier        } ,
 };
 
@@ -118,7 +118,7 @@ impl Closer
 
 					Poll::Ready(Err(e)) =>
 					{
-						ph.queue( WsEvent::Error( Arc::new( Error::from(e) )) );
+						ph.queue( WsEvent::Error( Arc::new( e.into() )) );
 
 						self.state = State::SinkError;
 						Err(()).into()
@@ -130,7 +130,7 @@ impl Closer
 						//
 						if let Err(e) = Pin::new( &mut socket ).as_mut().start_send( TungMessage::Close( Some(frame.clone()) ) )
 						{
-							ph.queue( WsEvent::Error( Arc::new( Error::from(e) )) );
+							ph.queue( WsEvent::Error( Arc::new( e.into() )) );
 
 							self.state = State::SinkError;
 
@@ -160,7 +160,7 @@ impl Closer
 
 							Poll::Ready(Err(e)) =>
 							{
-								ph.queue( WsEvent::Error( Arc::new( Error::from(e) )) );
+								ph.queue( WsEvent::Error( Arc::new( e.into() )) );
 
 								self.state = State::SinkError;
 
@@ -197,7 +197,7 @@ impl Closer
 
 					Poll::Ready(Err(e)) =>
 					{
-						ph.queue( WsEvent::Error( Arc::new( Error::from(e) )) );
+						ph.queue( WsEvent::Error( Arc::new( WsErr::from(e) )) );
 
 						self.state = State::SinkError;
 

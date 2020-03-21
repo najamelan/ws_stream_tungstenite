@@ -3,9 +3,9 @@ mod closer  ;
 
 use
 {
-	crate    :: { import::*, WsEvent, ErrorKind, Error } ,
-	notifier ::Notifier                                  ,
-	closer   ::Closer                                    ,
+	crate    :: { import::*, WsEvent, WsErr } ,
+	notifier :: { Notifier                  } ,
+	closer   :: { Closer                    } ,
 };
 
 
@@ -232,7 +232,7 @@ impl<S: Unpin> Stream for TungWebSocket<S> where S: AsyncRead + AsyncWrite
 
 					TungMessage::Text(_) =>
 					{
-						self.queue_event( WsEvent::Error(Arc::new( Error::from(ErrorKind::ReceivedText) )) );
+						self.queue_event( WsEvent::Error(Arc::new( WsErr::ReceivedText )) );
 
 						let string = "Text messages are not supported.";
 
@@ -304,7 +304,7 @@ impl<S: Unpin> Stream for TungWebSocket<S> where S: AsyncRead + AsyncWrite
 					{
 						self.state.insert( State::STREAM_CLOSED );
 
-						self.queue_event( WsEvent::Error(Arc::new( Error::from( std::io::Error::from(e.kind()) ) )) );
+						self.queue_event( WsEvent::Error(Arc::new( WsErr::from( std::io::Error::from(e.kind()) ) )) );
 
 						Some(Err(e)).into()
 					}
@@ -327,7 +327,7 @@ impl<S: Unpin> Stream for TungWebSocket<S> where S: AsyncRead + AsyncWrite
 						ready!( self.as_mut().send_closeframe( CloseCode::Protocol, string.clone(), cx ) );
 
 
-						self.queue_event( WsEvent::Error( Arc::new( Error::from(err) )) );
+						self.queue_event( WsEvent::Error( Arc::new( WsErr::from(err) )) );
 
 
 						// Continue to drive the event and the close handshake before returning.
@@ -344,7 +344,7 @@ impl<S: Unpin> Stream for TungWebSocket<S> where S: AsyncRead + AsyncWrite
 
 						let string = "Text messages are not supported";
 
-						self.queue_event( WsEvent::Error( Arc::new( Error::from(err) )) );
+						self.queue_event( WsEvent::Error( Arc::new( WsErr::from(err) )) );
 
 						// If this returns pending, we don't want to recurse, the task will be woken up.
 						//
@@ -361,7 +361,7 @@ impl<S: Unpin> Stream for TungWebSocket<S> where S: AsyncRead + AsyncWrite
 					//
 					TungErr::Capacity(_) =>
 					{
-						self.queue_event( WsEvent::Error( Arc::new( Error::from(err) )) );
+						self.queue_event( WsEvent::Error( Arc::new( WsErr::from(err) )) );
 						self.poll_next( cx )
 					}
 
@@ -565,7 +565,7 @@ fn to_io_error( err: TungErr ) -> io::Error
 
 impl<S> Observable< WsEvent > for TungWebSocket<S> where S: AsyncRead + AsyncWrite + Unpin
 {
-	type Error = Error;
+	type Error = WsErr;
 
 	fn observe( &mut self, options: ObserveConfig< WsEvent > ) -> Result< Events< WsEvent >, Self::Error >
 	{

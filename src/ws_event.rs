@@ -1,4 +1,4 @@
-use crate::{ import::*, Error };
+use crate::{ import::*, WsErr };
 
 
 /// Events that can happen on the websocket. These are returned through the stream you can obtain
@@ -14,7 +14,7 @@ pub enum WsEvent
 	/// through AsyncRead/AsyncWrite, codecs will always return `None` on subsequent polls, which would prevent
 	/// from driving the close handshake to completion. Hence they are returned out of band.
 	//
-	Error( Arc<Error> ),
+	Error( Arc<WsErr> ),
 
 	/// We received a close frame from the remote. Just keep polling the stream. The close handshake will be
 	/// completed for you. Once the stream returns `None`, you can drop the [WsStream](crate::WsStream).

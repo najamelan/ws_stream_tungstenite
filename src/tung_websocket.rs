@@ -352,8 +352,8 @@ impl<S: Unpin> Stream for TungWebSocket<S> where S: AsyncRead + AsyncWrite
 					}
 
 
-					// TODO: This is very unclear what it means.
-					// see: https://github.com/snapview/tungstenite-rs/issues/82
+					// The capacity for the tungstenite read buffer is currently usize::max, and there is
+					// no way for clients to change that, so this should never happen.
 					//
 					TungErr::Capacity(_) =>
 					{
@@ -386,11 +386,6 @@ impl<S: Unpin> Stream for TungWebSocket<S> where S: AsyncRead + AsyncWrite
 
 
 
-// TODO: How to communicate to the user and know when the connection will be closed. Is it possible
-// to get an error on sending, but just polling the stream will not suffice to close the connection?
-// eg. are there situations where the user still has to close manually? In principle a websocket is
-// a duplex connection, so we probably should not let this happen.
-//
 impl<S> Sink<Vec<u8>> for TungWebSocket<S> where S: AsyncRead + AsyncWrite + Unpin
 {
 	type Error = io::Error;

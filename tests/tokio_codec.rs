@@ -1,4 +1,6 @@
-// Test using the AsyncRead/AsyncWrite from futures 0.3
+#![ cfg( feature = "tokio_io" ) ]
+//
+// Test using the AsyncRead/AsyncWrite from tokio
 //
 // ✔ frame with futures-codec
 //
@@ -6,7 +8,7 @@ use
 {
 	ws_stream_tungstenite :: { *                                                    } ,
 	futures               :: { StreamExt, SinkExt, future::join                     } ,
-	futures_codec         :: { LinesCodec, Framed                                   } ,
+	tokio_util::codec     :: { LinesCodec, Framed                                   } ,
 	tokio                 :: { net::{ TcpListener }                                 } ,
 	async_tungstenite     :: { accept_async, tokio::{ connect_async, TokioAdapter } } ,
 	url                   :: { Url                                                  } ,
@@ -17,7 +19,7 @@ use
 
 #[ tokio::test ]
 //
-async fn futures_codec()
+async fn tokio_codec()
 {
 	// flexi_logger::Logger::with_str( "futures_codec=trace, ws_stream=trace, tokio=warn" ).start().expect( "flexi_logger");
 
@@ -30,10 +32,10 @@ async fn futures_codec()
 		let s          = accept_async( TokioAdapter(tcp_stream) ).await.expect("Error during the websocket handshake occurred");
 		let server     = WsStream::new( s );
 
-		let (mut sink, mut stream) = Framed::new( server, LinesCodec {} ).split();
+		let (mut sink, mut stream) = Framed::new( server, LinesCodec::new() ).split();
 
-		sink.send( "A line\n"       .to_string() ).await.expect( "Send a line" );
-		sink.send( "A second line\n".to_string() ).await.expect( "Send a line" );
+		sink.send( "A line"       .to_string() ).await.expect( "Send a line" );
+		sink.send( "A second line".to_string() ).await.expect( "Send a line" );
 
 		sink.close().await.expect( "close server" );
 
@@ -50,15 +52,15 @@ async fn futures_codec()
 		let socket = connect_async( url ).await.expect( "ws handshake" );
 
 		let     client = WsStream::new( socket.0 );
-		let mut framed = Framed::new( client, LinesCodec {} );
+		let mut framed = Framed::new( client, LinesCodec::new() );
 
 
 		let res = framed.next().await.expect( "Receive some" ).expect( "Receive a line" );
-		assert_eq!( "A line\n".to_string(), res );
+		assert_eq!( "A line".to_string(), res );
 
 
 		let res = framed.next().await.expect( "Receive some" ).expect( "Receive a second line" );
-		assert_eq!( "A second line\n".to_string(), res );
+		assert_eq!( "A second line".to_string(), res );
 
 		let res = framed.next().await;
 

@@ -5,45 +5,30 @@ use
 {
 	ws_stream_tungstenite :: { *                                                    } ,
 	futures               :: { StreamExt, AsyncReadExt, io::{ BufReader, copy_buf } } ,
-	futures               :: { executor::LocalPool, task::LocalSpawnExt             } ,
-	futures::compat       :: { Future01CompatExt, Stream01CompatExt                 } ,
 	std                   :: { env, net::SocketAddr, io                             } ,
 	log                   :: { *                                                    } ,
 	tokio                 :: { net::{ TcpListener, TcpStream }                      } ,
-	futures_01            :: { future::{ ok, Future as _ }                          } ,
-	tokio_tungstenite     :: { accept_async, stream::PeerAddr                       } ,
+	async_tungstenite     :: { accept_async, tokio::{ TokioAdapter }                } ,
 };
 
 
-
-fn main()
+#[tokio::main]
+//
+async fn main()
 {
 	// flexi_logger::Logger::with_str( "echo=trace, ws_stream_tungstenite=debug, tungstenite=warn, tokio_tungstenite=warn, tokio=warn" ).start().unwrap();
 
-	// We only need one thread.
-	//
-	let mut pool     = LocalPool::new();
-	let     spawner  = pool.spawner();
-	let     spawner2 = spawner.clone();
+	let addr: SocketAddr = env::args().nth(1).unwrap_or( "127.0.0.1:3212".to_string() ).parse().unwrap();
+	println!( "server task listening at: {}", &addr );
+
+	let mut socket      = TcpListener::bind(&addr).await.unwrap();
+	let mut connections = socket.incoming();
 
 
-	let server = async move
+	while let Some( stream ) = connections.next().await
 	{
-		let addr: SocketAddr = env::args().nth(1).unwrap_or( "127.0.0.1:3212".to_string() ).parse().unwrap();
-		println!( "server task listening at: {}", &addr );
-
-		let socket = TcpListener::bind(&addr).unwrap();
-		let mut connections = socket.incoming().compat();
-
-
-		while let Some( stream ) = connections.next().await
-		{
-			spawner.clone().spawn_local( handle_conn( stream ) ).expect( "spawn future" );
-		}
-	};
-
-	spawner2.spawn_local( server ).expect( "spawn future" );
-	pool.run();
+		tokio::spawn( handle_conn( stream ) );
+	}
 }
 
 
@@ -63,8 +48,8 @@ async fn handle_conn( stream: Result< TcpStream, io::Error> )
 		}
 	};
 
-
-	let s = ok( tcp_stream ).and_then( accept_async ).compat().await;
+	let peer_addr = tcp_stream.peer_addr();
+	let s = accept_async( TokioAdapter(tcp_stream) ).await;
 
 	// If the Ws handshake fails, we stop processing this connection
 	//
@@ -80,7 +65,7 @@ async fn handle_conn( stream: Result< TcpStream, io::Error> )
 	};
 
 
-	info!( "Incoming connection from: {}", socket.peer_addr().expect( "peer addr" ) );
+	info!( "Incoming connection from: {}", peer_addr.expect( "peer addr" ) );
 
 	let ws_stream = WsStream::new( socket );
 	let (reader, mut writer) = ws_stream.split();

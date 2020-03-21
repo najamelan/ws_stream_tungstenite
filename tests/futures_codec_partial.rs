@@ -4,14 +4,12 @@
 //
 use
 {
-	ws_stream_tungstenite :: { *                                                                      } ,
-	futures               :: { StreamExt, SinkExt, executor::block_on, future::join, channel::oneshot } ,
-	futures_codec         :: { LinesCodec, Framed                                                     } ,
-	tokio                 :: { net::{ TcpListener }                                                   } ,
-	futures::compat       :: { Future01CompatExt, Stream01CompatExt                                   } ,
-	futures_01            :: { future::{ ok, Future as _ }                                            } ,
-	tokio_tungstenite     :: { accept_async, connect_async                                            } ,
-	url                   :: { Url                                                                    } ,
+	ws_stream_tungstenite :: { *                                                    } ,
+	futures               :: { StreamExt, SinkExt, future::join, channel::oneshot   } ,
+	futures_codec         :: { LinesCodec, Framed                                   } ,
+	tokio                 :: { net::{ TcpListener }                                 } ,
+	async_tungstenite     :: { accept_async, tokio::{ connect_async, TokioAdapter } } ,
+	url                   :: { Url                                                  } ,
 
 	log :: { * } ,
 };
@@ -20,9 +18,9 @@ use
 
 // Receive half a frame
 //
-#[ test ]
+#[ tokio::test ]
 //
-fn partial()
+async fn partial()
 {
 	// flexi_logger::Logger::with_str( "futures_codec=trace, tungstenite=trace, ws_stream_tungstenite=trace, tokio=warn" ).start().expect( "flexi_logger");
 
@@ -30,11 +28,11 @@ fn partial()
 
 	let server = async move
 	{
-		let socket = TcpListener::bind( &"127.0.0.1:3013".parse().unwrap() ).unwrap();
-		let mut connections = socket.incoming().compat();
+		let mut socket: TcpListener = TcpListener::bind( "127.0.0.1:3013" ).await.expect( "bind to port" );
+		let mut connections = socket.incoming();
 
 		let tcp_stream = connections.next().await.expect( "1 connection" ).expect( "tcp connect" );
-		let s          = ok( tcp_stream ).and_then( accept_async ).compat().await.expect( "ws handshake" );
+		let s          = accept_async(TokioAdapter(tcp_stream)).await.expect("Error during the websocket handshake occurred");
 		let server     = WsStream::new( s );
 
 
@@ -61,7 +59,7 @@ fn partial()
 	let client = async move
 	{
 		let url    = Url::parse( "ws://127.0.0.1:3013" ).unwrap();
-		let socket = ok( url ).and_then( connect_async ).compat().await.expect( "ws handshake" );
+		let socket = connect_async( url ).await.expect( "ws handshake" );
 
 		let     client = WsStream::new( socket.0 );
 		let mut framed = Framed::new( client, LinesCodec {} );
@@ -83,5 +81,5 @@ fn partial()
 		debug!( "Client task ended" );
 	};
 
-	block_on( join( server, client ) );
+	join( server, client ).await;
 }

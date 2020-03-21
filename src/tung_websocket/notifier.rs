@@ -1,4 +1,4 @@
-use crate:: { import::*, WsEvent, Error };
+use crate:: { import::*, WsEvent, WsErr };
 
 
 // The different states we can be in.
@@ -71,10 +71,11 @@ impl Notifier
 	}
 
 
+	// try to send out queued events.
+	//
 	pub(crate) fn run( &mut self, cx: &mut Context<'_> ) -> Poll< Result<(), ()> >
 	{
 		let mut pharos = Pin::new( &mut self.pharos );
-
 
 		match self.state
 		{
@@ -100,7 +101,7 @@ impl Notifier
 						{
 							// note we can only get here if the queue isn't empty, so unwrap
 							//
-							if let Err(_e) = pharos.as_mut().start_send( self.events.pop_front().unwrap() )
+							if let Err(_e) = pharos.as_mut().start_send( self.events.pop_front().expect( "pop queued event." ) )
 							{
 								self.state = State::Closed;
 
@@ -151,7 +152,7 @@ impl Notifier
 
 						self.state = State::Closed;
 
-						return Err(()).into();
+						Err(()).into()
 					}
 
 					// We are really done
@@ -172,7 +173,7 @@ impl Notifier
 
 impl Observable< WsEvent > for Notifier
 {
-	type Error = Error;
+	type Error = WsErr;
 
 	fn observe( &mut self, options: ObserveConfig< WsEvent > ) -> Result< Events< WsEvent >, Self::Error >
 	{

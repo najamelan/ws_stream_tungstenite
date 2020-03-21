@@ -2,7 +2,7 @@
 //
 // ✔ notifiying errors through pharos
 //
-use crate :: { import::*, WsEvent, ErrorKind, tung_websocket::{ notifier::Notifier, closer::Closer } };
+use crate :: { import::*, WsEvent, WsErr, tung_websocket::{ notifier::Notifier, closer::Closer } };
 
 
 #[ test ]
@@ -16,8 +16,8 @@ fn notify_errors()
 
 	let test = async
 	{
-		let mut sink   = WebSocketStream::from_raw_socket( sc, Role::Server, None ).split().0.sink_compat();
-		let mut stream = WebSocketStream::from_raw_socket( cs, Role::Client, None ).split().1.compat();
+		let mut sink   = ATungSocket::from_raw_socket( sc, Role::Server, None ).await.split().0;
+		let mut stream = ATungSocket::from_raw_socket( cs, Role::Client, None ).await.split().1;
 
 		let mut notif  = Notifier::new();
 		let mut events = notif.observe( ObserveConfig::default() ).expect( "observe server" );
@@ -58,7 +58,7 @@ fn notify_errors()
 			{
 				WsEvent::Error( e ) =>
 				{
-					assert_eq!( &ErrorKind::Protocol, e.kind() );
+					assert!( matches!( *e, WsErr::Protocol ));
 				}
 
 				_ => unreachable!( "expect closeframe" ),

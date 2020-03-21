@@ -3,9 +3,9 @@ mod closer  ;
 
 use
 {
-	crate    :: { import::*, WsEvent, ErrorKind, Error } ,
-	notifier ::Notifier                                  ,
-	closer   ::Closer                                    ,
+	crate    :: { import::*, WsEvent, WsErr } ,
+	notifier :: { Notifier                  } ,
+	closer   :: { Closer                    } ,
 };
 
 
@@ -39,10 +39,10 @@ bitflags!
 /// A wrapper around a WebSocket provided by tungstenite. This provides Stream/Sink Vec<u8> to
 /// simplify implementing AsyncRead/AsyncWrite on top of tokio-tungstenite.
 //
-pub(crate) struct TungWebSocket<S: AsyncRead01 + AsyncWrite01>
+pub(crate) struct TungWebSocket<S>  where S: AsyncRead + AsyncWrite + Unpin
 {
-	sink  : Compat01As03Sink< SplitSink01  < TTungSocket<S> >, TungMessage > ,
-	stream: Compat01As03    < SplitStream01< TTungSocket<S> >              > ,
+	sink  : SplitSink  < ATungSocket<S>, TungMessage > ,
+	stream: SplitStream< ATungSocket<S> >              ,
 
 	state    : State    ,
 	notifier : Notifier ,
@@ -50,22 +50,21 @@ pub(crate) struct TungWebSocket<S: AsyncRead01 + AsyncWrite01>
 }
 
 
-impl<S> TungWebSocket<S> where S: AsyncRead01 + AsyncWrite01
+impl<S> TungWebSocket<S> where S: AsyncRead + AsyncWrite + Unpin
 {
 	/// Create a new Wrapper for a WebSocket provided by Tungstenite
 	//
-	pub(crate) fn new( inner: TTungSocket<S> ) -> Self
+	pub(crate) fn new( inner: ATungSocket<S> ) -> Self
 	{
-		let (tx, rx) = inner.split();
+		let (sink, stream) = inner.split();
 
 		Self
 		{
-			stream   : Compat01As03    ::new( rx ) ,
-			sink     : Compat01As03Sink::new( tx ) ,
-
-			state    : State::empty()              ,
-			notifier : Notifier::new()             ,
-			closer   : Closer::new()               ,
+			stream                       ,
+			sink                         ,
+			state    : State   ::empty() ,
+			notifier : Notifier::new()   ,
+			closer   : Closer  ::new()   ,
 		}
 	}
 
@@ -163,7 +162,7 @@ impl<S> TungWebSocket<S> where S: AsyncRead01 + AsyncWrite01
 
 
 
-impl<S: AsyncRead01 + AsyncWrite01> Stream for TungWebSocket<S>
+impl<S: Unpin> Stream for TungWebSocket<S> where S: AsyncRead + AsyncWrite
 {
 	type Item = Result<Vec<u8>, io::Error>;
 
@@ -180,13 +179,11 @@ impl<S: AsyncRead01 + AsyncWrite01> Stream for TungWebSocket<S>
 	///
 	/// The following errors can be returned from this method:
 	///
-	/// - other std::io::Error's generally mean something went wrong on the underlying transport. Consider these fatal
+	/// - std::io::Error generally mean something went wrong on the underlying transport. Consider these fatal
 	///   and just drop the connection.
 	//
 	fn poll_next( mut self: Pin<&mut Self>, cx: &mut Context<'_> ) -> Poll< Option<Self::Item> >
 	{
-		trace!( "TungWebSocket::poll_next" );
-
 		// Events can provide back pressure with bounded channels. If this is pending, we don't
 		// do anything else that might generate more events before these have been delivered.
 		//
@@ -208,20 +205,15 @@ impl<S: AsyncRead01 + AsyncWrite01> Stream for TungWebSocket<S>
 		}
 
 
-		trace!( "poll tokio-tungstenite for read" );
-
 		// Do actual reading from stream.
 		//
 		let res = ready!( Pin::new( &mut self.stream ).poll_next( cx ) );
 
-		trace!( "matching message type: {:?}", res );
 
 		match res
 		{
 			None =>
 			{
-				trace!( "poll_next: got None from inner stream" );
-
 				// if tungstenite is returning None here, we should no longer try to send a pending close frame.
 				//
 				self.state.remove( State::CLOSER_PEND   );
@@ -240,9 +232,7 @@ impl<S: AsyncRead01 + AsyncWrite01> Stream for TungWebSocket<S>
 
 					TungMessage::Text(_) =>
 					{
-						warn!( "Received text message, will close the connection." );
-
-						self.queue_event( WsEvent::Error(Arc::new( Error::from(ErrorKind::ReceivedText) )) );
+						self.queue_event( WsEvent::Error(Arc::new( WsErr::ReceivedText )) );
 
 						let string = "Text messages are not supported.";
 
@@ -258,8 +248,6 @@ impl<S: AsyncRead01 + AsyncWrite01> Stream for TungWebSocket<S>
 
 					TungMessage::Close(opt) =>
 					{
-						debug!( "received close frame: {:?}", opt );
-
 						self.queue_event( WsEvent::CloseFrame( opt ));
 
 						// Tungstenite will keep this stream around until the underlying connection closes.
@@ -301,8 +289,6 @@ impl<S: AsyncRead01 + AsyncWrite01> Stream for TungWebSocket<S>
 					TungErr::ConnectionClosed |
 					TungErr::AlreadyClosed   =>
 					{
-						trace!( "poll_next: got {} from inner stream", err );
-
 						self.state.insert( State::STREAM_CLOSED );
 
 						self.queue_event( WsEvent::Closed );
@@ -318,7 +304,7 @@ impl<S: AsyncRead01 + AsyncWrite01> Stream for TungWebSocket<S>
 					{
 						self.state.insert( State::STREAM_CLOSED );
 
-						self.queue_event( WsEvent::Error(Arc::new( Error::from( std::io::Error::from(e.kind()) ) )) );
+						self.queue_event( WsEvent::Error(Arc::new( WsErr::from( std::io::Error::from(e.kind()) ) )) );
 
 						Some(Err(e)).into()
 					}
@@ -334,14 +320,12 @@ impl<S: AsyncRead01 + AsyncWrite01> Stream for TungWebSocket<S>
 					//
 					TungErr::Protocol( ref string ) =>
 					{
-						error!( "Protocol error from Tungstenite: {}", string );
-
 						// If this returns pending, we don't want to recurse, the task will be woken up.
 						//
 						ready!( self.as_mut().send_closeframe( CloseCode::Protocol, string.clone(), cx ) );
 
 
-						self.queue_event( WsEvent::Error( Arc::new( Error::from(err) )) );
+						self.queue_event( WsEvent::Error( Arc::new( WsErr::from(err) )) );
 
 
 						// Continue to drive the event and the close handshake before returning.
@@ -354,11 +338,9 @@ impl<S: AsyncRead01 + AsyncWrite01> Stream for TungWebSocket<S>
 					//
 					TungErr::Utf8 =>
 					{
-						error!( "{}", &err );
-
 						let string = "Text messages are not supported";
 
-						self.queue_event( WsEvent::Error( Arc::new( Error::from(err) )) );
+						self.queue_event( WsEvent::Error( Arc::new( WsErr::from(err) )) );
 
 						// If this returns pending, we don't want to recurse, the task will be woken up.
 						//
@@ -370,14 +352,12 @@ impl<S: AsyncRead01 + AsyncWrite01> Stream for TungWebSocket<S>
 					}
 
 
-					// TODO: This is very unclear what it means.
-					// see: https://github.com/snapview/tungstenite-rs/issues/82
+					// The capacity for the tungstenite read buffer is currently usize::max, and there is
+					// no way for clients to change that, so this should never happen.
 					//
 					TungErr::Capacity(_) =>
 					{
-						error!( "{}", &err );
-
-						self.queue_event( WsEvent::Error( Arc::new( Error::from(err) )) );
+						self.queue_event( WsEvent::Error( Arc::new( WsErr::from(err) )) );
 						self.poll_next( cx )
 					}
 
@@ -391,9 +371,10 @@ impl<S: AsyncRead01 + AsyncWrite01> Stream for TungWebSocket<S>
 
 					// These are handshake errors:
 					//
-					TungErr::Tls (_)          |
-					TungErr::Url (_)          |
-					TungErr::Http(_)          =>
+					TungErr::Tls        (_)  |
+					TungErr::Url        (_)  |
+					TungErr::HttpFormat (_)  |
+					TungErr::Http       (_)  =>
 
 						unreachable!( "{:?}", err ),
 
@@ -405,12 +386,7 @@ impl<S: AsyncRead01 + AsyncWrite01> Stream for TungWebSocket<S>
 
 
 
-// TODO: How to communicate to the user and know when the connection will be closed. Is it possible
-// to get an error on sending, but just polling the stream will not suffice to close the connection?
-// eg. are there situations where the user still has to close manually? In principle a websocket is
-// a duplex connection, so we probably should not let this happen.
-//
-impl<S: AsyncRead01 + AsyncWrite01> Sink<Vec<u8>> for TungWebSocket<S>
+impl<S> Sink<Vec<u8>> for TungWebSocket<S> where S: AsyncRead + AsyncWrite + Unpin
 {
 	type Error = io::Error;
 
@@ -462,11 +438,9 @@ impl<S: AsyncRead01 + AsyncWrite01> Sink<Vec<u8>> for TungWebSocket<S>
 	//
 	fn start_send( mut self: Pin<&mut Self>, item: Vec<u8> ) -> Result<(), Self::Error>
 	{
-		trace!( "TungWebSocket: start_send" );
-
 		if self.state.contains( State::SINK_CLOSED )
 		{
-			return Err( io::ErrorKind::NotConnected.into() ).into()
+			return Err( io::ErrorKind::NotConnected.into() )
 		}
 
 
@@ -485,9 +459,6 @@ impl<S: AsyncRead01 + AsyncWrite01> Sink<Vec<u8>> for TungWebSocket<S>
 	//
 	fn poll_flush( mut self: Pin<&mut Self>, cx: &mut Context<'_> ) -> Poll<Result<(), Self::Error>>
 	{
-		trace!( "TungWebSocket: poll_flush" );
-
-
 		Pin::new( &mut self.sink ).poll_flush( cx ).map_err( |e|
 		{
 			// TODO: It's not quite clear whether the stream can remain functional when we get a sink error,
@@ -508,8 +479,6 @@ impl<S: AsyncRead01 + AsyncWrite01> Sink<Vec<u8>> for TungWebSocket<S>
 	//
 	fn poll_close( mut self: Pin<&mut Self>, cx: &mut Context<'_> ) -> Poll<Result<(), Self::Error>>
 	{
-		trace!( "TungWebSocket: poll_close" );
-
 		self.state.insert( State::SINK_CLOSED );
 
 		// We ignore closed errors since that's what we want, and because after calling this method
@@ -534,8 +503,6 @@ impl<S: AsyncRead01 + AsyncWrite01> Sink<Vec<u8>> for TungWebSocket<S>
 //
 fn to_io_error( err: TungErr ) -> io::Error
 {
-	error!( "{:?}", &err );
-
 	match err
 	{
 		// Mainly on the underlying stream. Fatal
@@ -575,9 +542,10 @@ fn to_io_error( err: TungErr ) -> io::Error
 
 		// These are handshake errors
 		//
-		TungErr::Tls (..) |
-		TungErr::Http(..) |
-		TungErr::Url (..) |
+		TungErr::Tls       (..) |
+		TungErr::Http      (..) |
+		TungErr::HttpFormat(..) |
+		TungErr::Url       (..) |
 
 		// This is an error specific to Text Messages that we don't use
 		//
@@ -586,9 +554,9 @@ fn to_io_error( err: TungErr ) -> io::Error
 }
 
 
-impl<S> Observable< WsEvent > for TungWebSocket<S> where S: AsyncRead01 + AsyncWrite01
+impl<S> Observable< WsEvent > for TungWebSocket<S> where S: AsyncRead + AsyncWrite + Unpin
 {
-	type Error = Error;
+	type Error = WsErr;
 
 	fn observe( &mut self, options: ObserveConfig< WsEvent > ) -> Result< Events< WsEvent >, Self::Error >
 	{

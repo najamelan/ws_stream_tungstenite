@@ -1,5 +1,4 @@
 language: rust
-rust    : [ nightly, stable ]
 
 # Need to cache the whole `.cargo` directory to keep .crates.toml for
 # cargo-update to work
@@ -14,7 +13,7 @@ cache:
 before_cache:
   - rm -rf /home/travis/.cargo/git
   - rm -rf /home/travis/.cargo/registry
-  - rm -rf /home/travis/.cargo/bin/wasm-pack
+  - rm -rf /home/travis/.cargo/bin/cargo-tarpaulin
 
 
 branches:
@@ -22,31 +21,51 @@ branches:
     - master
     - dev
 
-matrix:
+jobs:
 
   include:
 
-    # This won't work because we use a nightly feature in dev-dependencies and the feature leaks:
-    #
-    # - rust  : stable
-    #   script: cargo check
-
-    - os: linux
+    - name: linux stable rust
+      os  : linux
+      rust: stable
 
       script:
-        - cargo test --all-features
-        - cargo test --release --all-features
-        - cargo doc --no-deps --all-features
+        - bash ci/test.bash
 
-    - os: osx
+
+    - name: linux nightly rust
+      os  : linux
+      dist: bionic # required for tarpaulin binary distribution to work.
+      rust: nightly
+
+      addons:
+        apt:
+          packages:
+            - libssl-dev # for cargo-tarpaulin
+
 
       script:
-        - cargo test --all-features
+        - bash ci/test.bash
+        - bash ci/doc.bash
+        - bash ci/coverage.bash
 
 
-    - os: windows
+    - name: osx stable rust
+      os  : osx
+      rust: stable
 
       script:
-        - cargo test --all-features
+        - bash ci/test.bash
+
+
+    - name: windows stable rust
+      os  : windows
+      rust: stable
+
+      script:
+        - bash ci/test.bash
+
+
+
 
 

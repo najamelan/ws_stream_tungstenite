@@ -3,13 +3,11 @@
 use
 {
 	ws_stream_tungstenite  :: { *                                            } ,
-	futures                :: { StreamExt, SinkExt, join, executor::block_on } ,
+	futures                :: { TryFutureExt, StreamExt, SinkExt, join, executor::block_on } ,
 	futures_codec          :: { LinesCodec, Framed                           } ,
 	tokio                  :: { net::{ TcpListener }                         } ,
-	futures::compat        :: { Future01CompatExt, Stream01CompatExt         } ,
-	futures                :: { FutureExt, select, future::ready             } ,
-	futures_01             :: { future::{ ok, Future as _ }                  } ,
-	tokio_tungstenite      :: { accept_async, connect_async                  } ,
+	futures                :: { FutureExt, select, future::{ ok, ready }     } ,
+	async_tungstenite      :: { accept_async, tokio::{ TokioAdapter, connect_async } } ,
 	url                    :: { Url                                          } ,
 	log                    :: { *                                            } ,
 	std                    :: { time::Duration                               } ,
@@ -41,11 +39,11 @@ fn main()
 //
 async fn server()
 {
-	let socket = TcpListener::bind( &"127.0.0.1:3012".parse().unwrap() ).unwrap();
-	let mut connections = socket.incoming().compat();
+	let mut socket      = TcpListener::bind( "127.0.0.1:3012" ).await.unwrap();
+	let mut connections = socket.incoming();
 
 	let tcp = connections.next().await.expect( "1 connection" ).expect( "tcp connect" );
-	let s   = ok( tcp ).and_then( accept_async ).compat().await.expect( "ws handshake" );
+	let s   = accept_async( TokioAdapter(tcp) ).await.expect( "ws handshake" );
 	let ws  = WsStream::new( s );
 
 	let (mut sink, mut stream) = Framed::new( ws, LinesCodec {} ).split();
@@ -107,7 +105,7 @@ async fn server()
 	// This allows us to test that the client doesn't hang if the server doesn't close the connection
 	// in a timely matter. When uncommenting this line you will see the order of shutdown reverse.
 	//
-	Delay::new( Duration::from_secs(3) ).await.expect( "time out server" );
+	Delay::new( Duration::from_secs(3) ).await;
 
 	info!( "server end" );
 }
@@ -118,7 +116,7 @@ async fn server()
 async fn client()
 {
 	let url    = Url::parse( "ws://127.0.0.1:3012" ).unwrap();
-	let socket = ok( url ).and_then( connect_async ).compat().await.expect( "ws handshake" );
+	let socket = ok( url ).and_then( connect_async ).await.expect( "ws handshake" );
 	let ws     = WsStream::new( socket.0 );
 
 

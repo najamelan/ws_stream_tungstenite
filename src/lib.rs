@@ -1,9 +1,8 @@
 // See: https://github.com/rust-lang/rust/issues/44732#issuecomment-488766871
 //
-#![ cfg_attr( feature = "external_doc", feature(external_doc)         ) ]
-#![ cfg_attr( feature = "external_doc", doc(include = "../README.md") ) ]
-//!
-
+#![cfg_attr( nightly, feature(doc_cfg, external_doc) )]
+#![cfg_attr( nightly, doc(include = "../README.md")  )]
+#![doc = ""] // empty doc line to handle missing doc warning when the feature is missing.
 
 #![ doc    ( html_root_url = "https://docs.rs/ws_stream_tungstenite" ) ]
 #![ deny   ( missing_docs                                            ) ]
@@ -28,15 +27,15 @@
 
 mod ws_stream ;
 mod ws_event  ;
-mod error     ;
+mod ws_err    ;
 
 pub(crate) mod tung_websocket;
 
 pub use
 {
-	self::ws_stream :: { WsStream         } ,
-	self::ws_event  :: { WsEvent          } ,
-	self::error     :: { Error, ErrorKind } ,
+	self::ws_stream :: { WsStream } ,
+	self::ws_event  :: { WsEvent  } ,
+	self::ws_err    :: { WsErr    } ,
 };
 
 
@@ -46,32 +45,41 @@ mod import
 	pub(crate) use
 	{
 		bitflags          :: { bitflags                                                                                     } ,
-		futures_01        :: { stream::{ SplitStream as SplitStream01, SplitSink as SplitSink01, Stream as Stream01 }       } ,
-		futures::compat   :: { Compat01As03, Compat01As03Sink                                                               } ,
-		futures           :: { prelude::{ Stream, Sink, AsyncRead, AsyncWrite }, ready                                      } ,
-		log               :: { trace, debug, error, warn                                                                    } ,
-		std               :: { io::{ self }, pin::Pin, fmt, borrow::Cow, error::Error as ErrorTrait, ops::Deref, collections::VecDeque, sync::Arc, task::{ Context, Poll } } ,
-		tokio             :: { io::{ AsyncRead as AsyncRead01, AsyncWrite as AsyncWrite01 }                                 } ,
-		tokio_tungstenite :: { WebSocketStream as TTungSocket                                                               } ,
+		futures           :: { prelude::{ Stream, Sink, AsyncRead, AsyncWrite, AsyncBufRead }                               } ,
+		futures           :: { ready, stream::{ SplitSink, SplitStream, StreamExt }                                         } ,
+		log               :: { error                                                                                        } ,
+		std               :: { io, io::{ IoSlice, IoSliceMut }, pin::Pin, fmt, borrow::Cow                                  } ,
+		std               :: { collections::VecDeque, sync::Arc, task::{ Context, Poll }                                    } ,
+		async_tungstenite :: { WebSocketStream as ATungSocket                                                               } ,
 		tungstenite       :: { Message as TungMessage, Error as TungErr, protocol::{ CloseFrame, frame::coding::CloseCode } } ,
 		pharos            :: { Observable, ObserveConfig, Events, Pharos                                                    } ,
+		async_io_stream   :: { IoStream                                                                                     } ,
+		thiserror         :: { Error                                                                                        } ,
 	};
+
+
+
+	#[ cfg( feature = "tokio" ) ]
+	//
+	pub(crate) use
+	{
+		tokio::io::{ AsyncRead as TokAsyncRead, AsyncWrite as TokAsyncWrite },
+	};
+
 
 
 	#[ cfg( test ) ]
 	//
 	pub(crate) use
 	{
-		futures           :: { executor::block_on, StreamExt, SinkExt    } ,
-		futures_test      :: { task::noop_waker                          } ,
-		pharos            :: { Channel                                   } ,
-		assert_matches    :: { assert_matches                            } ,
-		endpoint          :: { Endpoint                                  } ,
-		futures           :: { future::{ join }, compat::Sink01CompatExt } ,
-		futures::compat   :: { Stream01CompatExt                         } ,
-		tokio_tungstenite :: { WebSocketStream                           } ,
-		tungstenite       :: { protocol::{ Role }                        } ,
-		log               :: { *                                         } ,
+		futures           :: { executor::block_on, SinkExt } ,
+		futures_test      :: { task::noop_waker            } ,
+		pharos            :: { Channel                     } ,
+		assert_matches    :: { assert_matches              } ,
+		futures_ringbuf   :: { Endpoint                    } ,
+		futures           :: { future::{ join }            } ,
+		tungstenite       :: { protocol::{ Role }          } ,
+		log               :: { *                           } ,
 	};
 }
 

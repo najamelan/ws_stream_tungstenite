@@ -4,16 +4,14 @@ use
 {
 	ws_stream_tungstenite :: { *                                                                                  } ,
 	std                   :: { future::Future                                                                     } ,
-	futures               :: { StreamExt, SinkExt, executor::block_on, future::join, compat::Sink01CompatExt      } ,
+	futures               :: { StreamExt, SinkExt, executor::block_on, future::join                               } ,
 	futures_codec         :: { LinesCodec, Framed                                                                 } ,
-	futures::compat       :: { Stream01CompatExt                                                                  } ,
-	futures_01            :: { stream::Stream                                                                     } ,
-	tokio_tungstenite     :: { WebSocketStream                                                                    } ,
+	async_tungstenite     :: { WebSocketStream                                                                    } ,
 	tungstenite           :: { protocol::{ WebSocketConfig, CloseFrame, frame::coding::CloseCode, Role }, Message } ,
 	pharos                :: { Observable, ObserveConfig                                                          } ,
 	assert_matches        :: { assert_matches                                                                     } ,
 	async_progress        :: { Progress                                                                           } ,
-	endpoint              :: { Endpoint                                                                           } ,
+	futures_ringbuf       :: { Endpoint                                                                           } ,
 	log                   :: { *                                                                                  } ,
 };
 
@@ -65,7 +63,7 @@ async fn server
 		max_frame_size  : None     ,
 	};
 
-	let     tws    = WebSocketStream::from_raw_socket( sc, Role::Server, Some(conf) );
+	let     tws    = WebSocketStream::from_raw_socket( sc, Role::Server, Some(conf) ).await;
 	let mut ws     = WsStream::new( tws );
 	let mut events = ws.observe( ObserveConfig::default() ).expect( "observe server" );
 
@@ -109,7 +107,7 @@ async fn server
 
 		match events.next().await.expect( "protocol error" )
 		{
-			WsEvent::Error( e ) => assert_eq!( &ErrorKind::ReceivedText, e.kind() ),
+			WsEvent::Error( e ) => assert!(matches!( *e, WsErr::ReceivedText )),
 			evt                 => assert!( false, "{:?}", evt ),
 		}
 
@@ -138,10 +136,7 @@ async fn client
 		max_frame_size  : None     ,
 	};
 
-	let (sink, stream) = WebSocketStream::from_raw_socket( cs, Role::Client, Some(conf) ).split();
-
-	let mut sink   = sink.sink_compat();
-	let mut stream = stream.compat();
+	let (mut sink, mut stream) = WebSocketStream::from_raw_socket( cs, Role::Client, Some(conf) ).await.split();
 
 	info!( "wait for send_text" );
 	send_text.await;

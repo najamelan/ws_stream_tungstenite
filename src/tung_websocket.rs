@@ -41,8 +41,7 @@ bitflags!
 //
 pub(crate) struct TungWebSocket<S>  where S: AsyncRead + AsyncWrite + Unpin
 {
-	sink  : SplitSink  < ATungSocket<S>, TungMessage > ,
-	stream: SplitStream< ATungSocket<S> >              ,
+	inner: ATungSocket<S> ,
 
 	state    : State    ,
 	notifier : Notifier ,
@@ -56,12 +55,9 @@ impl<S> TungWebSocket<S> where S: AsyncRead + AsyncWrite + Unpin
 	//
 	pub(crate) fn new( inner: ATungSocket<S> ) -> Self
 	{
-		let (sink, stream) = inner.split();
-
 		Self
 		{
-			stream                       ,
-			sink                         ,
+			inner                        ,
 			state    : State   ::empty() ,
 			notifier : Notifier::new()   ,
 			closer   : Closer  ::new()   ,
@@ -146,7 +142,7 @@ impl<S> TungWebSocket<S> where S: AsyncRead + AsyncWrite + Unpin
 		}
 
 
-		if ready!( Pin::new( &mut self.closer ).run( &mut self.sink, &mut self.notifier, cx) ).is_err()
+		if ready!( Pin::new( &mut self.closer ).run( &mut self.inner, &mut self.notifier, cx) ).is_err()
 		{
 			self.state.insert( State::SINK_CLOSED );
 		}
@@ -207,7 +203,7 @@ impl<S: Unpin> Stream for TungWebSocket<S> where S: AsyncRead + AsyncWrite
 
 		// Do actual reading from stream.
 		//
-		let res = ready!( Pin::new( &mut self.stream ).poll_next( cx ) );
+		let res = ready!( Pin::new( &mut self.inner ).poll_next( cx ) );
 
 
 		match res
@@ -408,7 +404,7 @@ impl<S> Sink<Vec<u8>> for TungWebSocket<S> where S: AsyncRead + AsyncWrite + Unp
 		}
 
 
-		Pin::new( &mut self.sink ).poll_ready( cx ).map_err( |e|
+		Pin::new( &mut self.inner ).poll_ready( cx ).map_err( |e|
 		{
 			// TODO: It's not quite clear whether the stream can remain functional when we get a sink error,
 			// but since this is a duplex connection, and poll_next also tries to send out close frames
@@ -444,7 +440,7 @@ impl<S> Sink<Vec<u8>> for TungWebSocket<S> where S: AsyncRead + AsyncWrite + Unp
 		}
 
 
-		Pin::new( &mut self.sink ).start_send( item.into() ).map_err( |e|
+		Pin::new( &mut self.inner ).start_send( item.into() ).map_err( |e|
 		{
 			// TODO: It's not quite clear whether the stream can remain functional when we get a sink error,
 			// but since this is a duplex connection, and poll_next also tries to send out close frames
@@ -459,7 +455,7 @@ impl<S> Sink<Vec<u8>> for TungWebSocket<S> where S: AsyncRead + AsyncWrite + Unp
 	//
 	fn poll_flush( mut self: Pin<&mut Self>, cx: &mut Context<'_> ) -> Poll<Result<(), Self::Error>>
 	{
-		Pin::new( &mut self.sink ).poll_flush( cx ).map_err( |e|
+		Pin::new( &mut self.inner ).poll_flush( cx ).map_err( |e|
 		{
 			// TODO: It's not quite clear whether the stream can remain functional when we get a sink error,
 			// but since this is a duplex connection, and poll_next also tries to send out close frames
@@ -485,7 +481,7 @@ impl<S> Sink<Vec<u8>> for TungWebSocket<S> where S: AsyncRead + AsyncWrite + Unp
 		// the sender task can in any case be dropped, and verifying that the connection can actually
 		// be closed should be done through the reader task.
 		//
-		Pin::new( &mut self.sink ).poll_close( cx ).map_err( |e|
+		Pin::new( &mut self.inner ).poll_close( cx ).map_err( |e|
 		{
 			// TODO: It's not quite clear whether the stream can remain functional when we get a sink error,
 			// but since this is a duplex connection, and poll_next also tries to send out close frames

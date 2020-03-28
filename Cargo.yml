@@ -55,7 +55,9 @@ dependencies:
 
   # public deps. Bump major version if you change their version number here.
   #
-  futures           : { version: ^0.3, default-features: false }
+  futures-core      : { version: ^0.3, default-features: false }
+  futures-sink      : { version: ^0.3, default-features: false }
+  futures-io        : { version: ^0.3, default-features: false }
   log               : ^0.4
   tungstenite       : ^0.10
   pharos            : ^0.4

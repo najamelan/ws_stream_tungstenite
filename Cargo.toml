@@ -21,7 +21,15 @@ tungstenite = "^0.10"
 features = ["map_pharos"]
 version = "^0.1"
 
-[dependencies.futures]
+[dependencies.futures-core]
+default-features = false
+version = "^0.3"
+
+[dependencies.futures-io]
+default-features = false
+version = "^0.3"
+
+[dependencies.futures-sink]
 default-features = false
 version = "^0.3"
 

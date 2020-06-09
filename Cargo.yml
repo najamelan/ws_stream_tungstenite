@@ -3,19 +3,28 @@ package:
   # When releasing to crates.io:
   #
   # - last check for all TODO, FIXME, expect, unwrap.
-  # - re-read and final polish of documentation
-  # - run cargo udeps
-  # - run cargo clippy
   # - recheck log statements (informative, none left that were just for development, ...)
+  # - `cargo +nightly doc` and re-read and final polish of documentation.
+  #
   # - Update CHANGELOG.md.
   # - Update version numbers in Cargo.yml, Cargo.toml, install section of readme.
-  # - verify CI result
-  # - run cargo test on dependent crates
-  # - cargo publish
-  # - merge dev branch into master
-  # - create git tag with version number
   #
-  version       : 0.1.0
+  # - `touch **.rs && cargo clippy --tests --examples --benches --all-features`
+  # - `cargo update`
+  # - `cargo udeps --all-targets --all-features`
+  # - `cargo audit`
+  # - `cargo crev crate verify --show-all --recursive` and review.
+  # - 'cargo test --all-targets --all-features'
+  #
+  # - push dev and verify CI result
+  # - `cargo test` on dependent crates
+  #
+  # - cargo publish
+  # - `git checkout master && git merge dev --no-ff`
+  # - `git tag x.x.x` with version number.
+  # - `git push && git push --tags`
+  #
+  version       : 0.2.0
   name          : ws_stream_tungstenite
   edition       : '2018'
   authors       : [ Naja Melan <najamelan@autistici.org> ]
@@ -55,11 +64,13 @@ dependencies:
 
   # public deps. Bump major version if you change their version number here.
   #
-  futures           : { version: ^0.3, default-features: false }
+  futures-core      : { version: ^0.3, default-features: false }
+  futures-sink      : { version: ^0.3, default-features: false }
+  futures-io        : { version: ^0.3, default-features: false }
   log               : ^0.4
   tungstenite       : ^0.10
   pharos            : ^0.4
-  async-tungstenite : ^0.4
+  async-tungstenite : ^0.5
   tokio             : { version: ^0.2, optional: true }
 
   # private deps
@@ -71,7 +82,7 @@ dependencies:
 dev-dependencies:
 
   async-std           : { version: ^1, features: [ attributes ] }
-  async-tungstenite   : { version: ^0.4, features: [ tokio-runtime, async-std-runtime ] }
+  async-tungstenite   : { version: ^0.5, features: [ tokio-runtime, async-std-runtime ] }
   assert_matches      : ^1.3
   async_progress      : ^0.1
   flexi_logger        : ^0.15

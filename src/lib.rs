@@ -45,8 +45,9 @@ mod import
 	pub(crate) use
 	{
 		bitflags          :: { bitflags                                                                                     } ,
-		futures           :: { prelude::{ Stream, Sink, AsyncRead, AsyncWrite, AsyncBufRead }                               } ,
-		futures           :: { ready, stream::{ SplitSink, SplitStream, StreamExt }                                         } ,
+		futures_core      :: { ready, Stream                                                                                } ,
+		futures_sink      :: { Sink                                                                                         } ,
+		futures_io        :: { AsyncRead, AsyncWrite, AsyncBufRead                                                          } ,
 		log               :: { error                                                                                        } ,
 		std               :: { io, io::{ IoSlice, IoSliceMut }, pin::Pin, fmt, borrow::Cow                                  } ,
 		std               :: { collections::VecDeque, sync::Arc, task::{ Context, Poll }                                    } ,
@@ -72,14 +73,14 @@ mod import
 	//
 	pub(crate) use
 	{
-		futures           :: { executor::block_on, SinkExt } ,
-		futures_test      :: { task::noop_waker            } ,
-		pharos            :: { Channel                     } ,
-		assert_matches    :: { assert_matches              } ,
-		futures_ringbuf   :: { Endpoint                    } ,
-		futures           :: { future::{ join }            } ,
-		tungstenite       :: { protocol::{ Role }          } ,
-		log               :: { *                           } ,
+		futures           :: { executor::block_on, SinkExt, StreamExt } ,
+		futures_test      :: { task::noop_waker                       } ,
+		pharos            :: { Channel                                } ,
+		assert_matches    :: { assert_matches                         } ,
+		futures_ringbuf   :: { Endpoint                               } ,
+		futures           :: { future::{ join }                       } ,
+		tungstenite       :: { protocol::{ Role }                     } ,
+		log               :: { *                                      } ,
 	};
 }
 

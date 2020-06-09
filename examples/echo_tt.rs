@@ -18,7 +18,7 @@ async fn main()
 {
 	// flexi_logger::Logger::with_str( "echo_tt=trace, tokio=trace, tungstenite=trace, tokio_tungstenite=trace" ).start().unwrap();
 
-	let addr: SocketAddr = env::args().nth(1).unwrap_or( "127.0.0.1:3212".to_string() ).parse().unwrap();
+	let addr: SocketAddr = env::args().nth(1).unwrap_or_else( || "127.0.0.1:3212".to_string() ).parse().unwrap();
 	let mut incoming = TcpListener::bind( addr ).await.unwrap();
 
 	println!( "Listening on: {}", addr );

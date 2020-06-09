@@ -65,7 +65,7 @@ impl<S> AsyncWrite for WsStream<S> where S: AsyncRead + AsyncWrite + Unpin
 {
 	/// Will always flush the underlying socket. Will always create an entire Websocket message from every write,
 	/// so call with a sufficiently large buffer if you have performance problems. Don't call with a buffer larger
-	/// than the max message size set in tungstenite (64MiB) by default.
+	/// than the max message size accepted by the remote endpoint.
 	//
 	fn poll_write( mut self: Pin<&mut Self>, cx: &mut Context<'_>, buf: &[u8] ) -> Poll< io::Result<usize> >
 	{
@@ -74,8 +74,8 @@ impl<S> AsyncWrite for WsStream<S> where S: AsyncRead + AsyncWrite + Unpin
 
 
 	/// Will always flush the underlying socket. Will always create an entire Websocket message from every write,
-	/// so call with a sufficiently large buffers if you have performance problems. Don't call with a total buffer size
-	/// larger than the max message size set in tungstenite (64MiB) by default.
+	/// so call with a sufficiently large buffers if you have performance problems. Don't call with a buffer larger
+	/// than the max message size accepted by the remote endpoint.
 	//
 	fn poll_write_vectored( mut self: Pin<&mut Self>, cx: &mut Context<'_>, bufs: &[ IoSlice<'_> ] ) -> Poll< io::Result<usize> >
 	{
@@ -103,6 +103,10 @@ impl<S> AsyncWrite for WsStream<S> where S: AsyncRead + AsyncWrite + Unpin
 //
 impl<S> TokAsyncWrite for WsStream<S> where S: AsyncRead + AsyncWrite + Unpin
 {
+	/// Will always flush the underlying socket. Will always create an entire Websocket message from every write,
+	/// so call with a sufficiently large buffer if you have performance problems. Don't call with a buffer larger
+	/// than the max message size accepted by the remote endpoint.
+	//
 	fn poll_write( mut self: Pin<&mut Self>, cx: &mut Context<'_>, buf: &[u8] ) -> Poll< io::Result<usize> >
 	{
 		TokAsyncWrite::poll_write( Pin::new( &mut self.inner ), cx, buf )

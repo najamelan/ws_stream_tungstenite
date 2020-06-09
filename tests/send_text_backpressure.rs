@@ -42,7 +42,7 @@ fn send_text_backpressure()
 
 
 	let server = server( read_text, steps.clone(), sc );
-	let client = client( send_text, client_read, steps.clone(), cs );
+	let client = client( send_text, client_read, steps, cs );
 
 	block_on( join( server, client ) );
 	info!( "end test" );

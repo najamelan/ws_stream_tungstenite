@@ -18,7 +18,7 @@ async fn main()
 {
 	// flexi_logger::Logger::with_str( "echo=trace, ws_stream_tungstenite=debug, tungstenite=warn, tokio_tungstenite=warn, tokio=warn" ).start().unwrap();
 
-	let addr: SocketAddr = env::args().nth(1).unwrap_or( "127.0.0.1:3212".to_string() ).parse().unwrap();
+	let addr: SocketAddr = env::args().nth(1).unwrap_or_else( || "127.0.0.1:3212".to_string() ).parse().unwrap();
 	println!( "server task listening at: {}", &addr );
 
 	let mut socket      = TcpListener::bind(&addr).await.unwrap();
@@ -73,15 +73,8 @@ async fn handle_conn( stream: Result< TcpStream, io::Error> )
 	// BufReader allows our AsyncRead to work with a bigger buffer than the default 8k.
 	// This improves performance quite a bit.
 	//
-	match copy_buf( BufReader::with_capacity( 64_000, reader ), &mut writer ).await
+	if let Err(e) = copy_buf( BufReader::with_capacity( 64_000, reader ), &mut writer ).await
 	{
-		Ok(_) => {},
-
-		Err(e) => match e.kind()
-		{
-			// Other errors we want to know about
-			//
-			_ => { error!( "{:?}", e.kind() ) }
-		}
+		error!( "{:?}", e.kind() )
 	}
 }

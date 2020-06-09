@@ -46,14 +46,14 @@ With [cargo yaml](https://gitlab.com/storedbox/cargo-yaml):
 ```yaml
 dependencies:
 
-  ws_stream_tungstenite: ^0.1
+  ws_stream_tungstenite: ^0.2
 ```
 
 With raw Cargo.toml
 ```toml
 [dependencies]
 
-   ws_stream_tungstenite = "0.1"
+   ws_stream_tungstenite = "0.2"
 ```
 
 ### Upgrade
@@ -63,24 +63,6 @@ Please check out the [changelog](https://github.com/najamelan/ws_stream_tungsten
 ### Dependencies
 
 This crate has few dependencies. Cargo will automatically handle it's dependencies for you.
-
-```yaml
-dependencies:
-
-  # public deps. Bump major version if you change their version number here.
-  #
-  futures           : { version: ^0.3, default-features: false }
-  log               : ^0.4
-  tungstenite       : ^0.10
-  pharos            : ^0.4
-  async-tungstenite : ^0.4
-  tokio             : { version: ^0.2, optional: true }
-
-  # private deps
-  #
-  bitflags          : ^1
-  async_io_stream   : { version: ^0.1, features: [ map_pharos ] }
-```
 
 ### Security
 

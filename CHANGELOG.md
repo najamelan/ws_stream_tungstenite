@@ -1,5 +1,11 @@
 # Changelog
 
+# 0.2.0 - 2019-06-10
+
+  - **BREAKING_CHANGE**: update async-tungstenite to 0.5.
+  - correct a documentation mistake
+  - chores.
+
 # 0.1.0 - 2019-03-21
 
   - **BREAKING_CHANGE**: Switch to async_tungstenite as backend, we are now framework agnostic.

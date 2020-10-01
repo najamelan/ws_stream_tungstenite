@@ -1,12 +1,16 @@
 # Changelog
 
-# 0.2.0 - 2019-06-10
+# 0.3.0 - 2020-10-01
+
+  - **BREAKING_CHANGE**: update async-tungstenite to 0.8 and tungstenite to 0.11.
+
+# 0.2.0 - 2020-06-10
 
   - **BREAKING_CHANGE**: update async-tungstenite to 0.5.
   - correct a documentation mistake
   - chores.
 
-# 0.1.0 - 2019-03-21
+# 0.1.0 - 2020-03-21
 
   - **BREAKING_CHANGE**: Switch to async_tungstenite as backend, we are now framework agnostic.
   - **BREAKING_CHANGE**: Rename error type to WsErr.

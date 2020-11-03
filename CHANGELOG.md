@@ -1,5 +1,9 @@
 # Changelog
 
+# 0.4.0-beta.1 - 2020-11-03
+
+  - **BREAKING_CHANGE**: update tokio to 0.3 and async-tungstenite to 0.10. Will go out of beta when tokio releases 1.0.
+
 # 0.3.0 - 2020-10-01
 
   - **BREAKING_CHANGE**: update async-tungstenite to 0.8 and tungstenite to 0.11.

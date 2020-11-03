@@ -27,10 +27,8 @@ async fn ping_pong()
 
 	let server = async
 	{
-		let mut socket      = TcpListener::bind( "127.0.0.1:3015" ).await.expect( "bind to port" );
-		let mut connections = socket.incoming();
-
-		let tcp_stream = connections.next().await.expect( "1 connection" ).expect( "tcp connect" );
+		let mut socket = TcpListener::bind( "127.0.0.1:3015" ).await.expect( "bind to port" );
+		let tcp_stream = socket.next().await.expect( "1 connection" ).expect( "tcp connect" );
 		let s          = accept_async(TokioAdapter(tcp_stream)).await.expect("Error during the websocket handshake occurred");
 		let server     = WsStream::new( s );
 

@@ -21,11 +21,10 @@ async fn main()
 	let addr: SocketAddr = env::args().nth(1).unwrap_or_else( || "127.0.0.1:3212".to_string() ).parse().unwrap();
 	println!( "server task listening at: {}", &addr );
 
-	let mut socket      = TcpListener::bind(&addr).await.unwrap();
-	let mut connections = socket.incoming();
+	let mut socket = TcpListener::bind(&addr).await.unwrap();
 
 
-	while let Some( stream ) = connections.next().await
+	while let Some( stream ) = socket.next().await
 	{
 		tokio::spawn( handle_conn( stream ) );
 	}

@@ -40,9 +40,8 @@ fn main()
 async fn server()
 {
 	let mut socket      = TcpListener::bind( "127.0.0.1:3012" ).await.unwrap();
-	let mut connections = socket.incoming();
 
-	let tcp = connections.next().await.expect( "1 connection" ).expect( "tcp connect" );
+	let tcp = socket.next().await.expect( "1 connection" ).expect( "tcp connect" );
 	let s   = accept_async( TokioAdapter(tcp) ).await.expect( "ws handshake" );
 	let ws  = WsStream::new( s );
 

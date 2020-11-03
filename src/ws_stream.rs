@@ -147,7 +147,7 @@ impl<S> AsyncRead  for WsStream<S> where S: AsyncRead + AsyncWrite + Unpin
 //
 impl<S> TokAsyncRead for WsStream<S> where S: AsyncRead + AsyncWrite + Unpin
 {
-	fn poll_read( mut self: Pin<&mut Self>, cx: &mut Context<'_>, buf: &mut [u8] ) -> Poll< io::Result<usize> >
+	fn poll_read( mut self: Pin<&mut Self>, cx: &mut Context<'_>, buf: &mut tokio::io::ReadBuf<'_> ) -> Poll< io::Result<()> >
 	{
 		TokAsyncRead::poll_read( Pin::new( &mut self.inner), cx, buf )
 	}

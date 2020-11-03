@@ -2,7 +2,7 @@
 //
 // Test using the AsyncRead/AsyncWrite from tokio
 //
-// ✔ frame with futures-codec
+// ✔ frame with tokio_util::codec
 //
 use
 {

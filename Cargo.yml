@@ -64,19 +64,19 @@ dependencies:
 
   # public deps. Bump major version if you change their version number here.
   #
-  futures-core      : { version: ^0.3, default-features: false }
-  futures-sink      : { version: ^0.3, default-features: false }
-  futures-io        : { version: ^0.3, default-features: false }
-  log               : ^0.4
+  futures-core      : { version: ^0.3 , default-features: false }
+  futures-sink      : { version: ^0.3 , default-features: false }
+  futures-io        : { version: ^0.3 , default-features: false }
+  log               : { version: ^0.4 , default-features: false }
   tungstenite       : { version: ^0.11, default-features: false }
-  pharos            : ^0.4
-  async-tungstenite : ^0.10
-  tokio             : { version: ^0.3, optional: true }
+  pharos            : { version: ^0.4 , default-features: false }
+  async-tungstenite : { version: ^0.10, default-features: false }
+  tokio             : { version: ^0.3 , optional: true, default-features: false }
 
   # private deps
   #
-  bitflags          : ^1
-  async_io_stream   : { version: ^0.2.0-beta, features: [ map_pharos ] }
+  bitflags          : { version: ^1, default-features: false }
+  async_io_stream   : { version: ^0.2.0-beta, features: [ map_pharos ], default-features: false }
 
 dev-dependencies:
 

@@ -1,5 +1,10 @@
 # Changelog
 
+# 0.4.0-beta.2 - 2020-11-23
+
+  - **BREAKING_CHANGE**: do not enable default features on tungstenite.
+  - remove thiserror.
+
 # 0.4.0-beta.1 - 2020-11-03
 
   - **BREAKING_CHANGE**: update tokio to 0.3 and async-tungstenite to 0.10. Will go out of beta when tokio releases 1.0.

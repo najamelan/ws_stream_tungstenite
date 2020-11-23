@@ -275,6 +275,10 @@ impl<S: Unpin> Stream for TungWebSocket<S> where S: AsyncRead + AsyncWrite
 
 			Some(Err( err )) =>
 			{
+				// See the wildcard at the bottom for why we need this.
+				//
+				#[ allow(unreachable_patterns)]
+				//
 				match err
 				{
 					// Just return None, as no more data will come in.
@@ -367,10 +371,15 @@ impl<S: Unpin> Stream for TungWebSocket<S> where S: AsyncRead + AsyncWrite
 
 					// These are handshake errors:
 					//
-					TungErr::Tls        (_)  |
 					TungErr::Url        (_)  |
 					TungErr::HttpFormat (_)  |
-					TungErr::Http       (_)  =>
+					TungErr::Http       (_)  |
+
+					// I'd rather have this match exhaustive, but tungstenite has a Tls variant that
+					// is only there if they have a feature enabled. Since we cannot check whether
+					// a feature is enabled on a dependency, we have to go for wildcard here.
+					//
+					_ =>
 
 						unreachable!( "{:?}", err ),
 
@@ -499,6 +508,10 @@ impl<S> Sink<Vec<u8>> for TungWebSocket<S> where S: AsyncRead + AsyncWrite + Unp
 //
 fn to_io_error( err: TungErr ) -> io::Error
 {
+	// See the wildcard at the bottom for why we need this.
+	//
+	#[ allow(unreachable_patterns)]
+	//
 	match err
 	{
 		// Mainly on the underlying stream. Fatal
@@ -538,14 +551,19 @@ fn to_io_error( err: TungErr ) -> io::Error
 
 		// These are handshake errors
 		//
-		TungErr::Tls       (..) |
 		TungErr::Http      (..) |
 		TungErr::HttpFormat(..) |
 		TungErr::Url       (..) |
 
 		// This is an error specific to Text Messages that we don't use
 		//
-		TungErr::Utf8 => unreachable!() ,
+		TungErr::Utf8 |
+
+		// I'd rather have this match exhaustive, but tungstenite has a Tls variant that
+		// is only there if they have a feature enabled. Since we cannot check whether
+		// a feature is enabled on a dependency, we have to go for wildcard here.
+		//
+		_ => unreachable!() ,
 	}
 }
 

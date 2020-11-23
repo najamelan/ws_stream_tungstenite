@@ -55,7 +55,6 @@ mod import
 		tungstenite       :: { Message as TungMessage, Error as TungErr, protocol::{ CloseFrame, frame::coding::CloseCode } } ,
 		pharos            :: { Observable, ObserveConfig, Events, Pharos                                                    } ,
 		async_io_stream   :: { IoStream                                                                                     } ,
-		thiserror         :: { Error                                                                                        } ,
 	};
 
 

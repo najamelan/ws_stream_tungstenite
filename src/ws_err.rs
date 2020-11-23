@@ -3,15 +3,13 @@ use crate::{ import::* };
 
 /// The error type for errors happening in _ws_stream_tungstenite_.
 //
-#[ derive( Debug, Error )            ]
+#[ derive( Debug )            ]
 #[ non_exhaustive                    ]
 #[ allow( variant_size_differences ) ]
 //
 pub enum WsErr
 {
 	/// A tungstenite error.
-	//
-	#[ error( "A tungstenite error happened: {source}" )]
 	//
 	Tungstenite
 	{
@@ -21,8 +19,6 @@ pub enum WsErr
 	},
 
 	/// An error from the underlying connection.
-	//
-	#[ error( "An io error happened: {source}" )]
 	//
 	Io
 	{
@@ -34,23 +30,66 @@ pub enum WsErr
 	/// A websocket protocol error. On read it means the remote didn't respect the websocket protocol.
 	/// On write this means there's a bug in ws_stream_tungstenite and it will panic.
 	//
-	#[ error( "The remote committed a websocket protocol violation." )]
-	//
 	Protocol,
 
 	/// We received a websocket text message. As we are about turning the websocket connection into a
 	/// bytestream, this is probably unintended, and thus unsupported.
-	//
-	#[ error( "The remote sent a Text message. Only Binary messages are accepted." )]
 	//
 	ReceivedText,
 
 	/// Trying to work with an connection that is closed. Only happens on writing. On reading
 	/// `poll_read` will just return `None`.
 	//
-	#[ error( "The connection is already closed." )]
-	//
 	Closed,
+}
+
+
+
+impl std::error::Error for WsErr
+{
+	fn source( &self ) -> Option<&(dyn std::error::Error + 'static)>
+	{
+		match &self
+		{
+			WsErr::Tungstenite{ ref source } => Some(source),
+			WsErr::Io         { ref source } => Some(source),
+
+			WsErr::Protocol     |
+			WsErr::ReceivedText |
+			WsErr::Closed       => None
+		}
+	}
+}
+
+
+
+impl fmt::Display for WsErr
+{
+	fn fmt( &self, f: &mut fmt::Formatter<'_> ) -> fmt::Result
+	{
+		match &self
+		{
+			WsErr::Tungstenite{ source } =>
+
+				write!( f, "A tungstenite error happened: {}", source ),
+
+			WsErr::Io{ source } =>
+
+				write!( f, "An io error happened: {}", source ),
+
+			WsErr::Protocol =>
+
+				write!( f, "The remote committed a websocket protocol violation." ),
+
+			WsErr::ReceivedText =>
+
+				write!( f, "The remote sent a Text message. Only Binary messages are accepted." ),
+
+			WsErr::Closed =>
+
+				write!( f, "The connection is already closed." ),
+		}
+	}
 }
 
 

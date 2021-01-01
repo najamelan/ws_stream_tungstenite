@@ -1,5 +1,9 @@
 # Changelog
 
+# 0.4.0 - 2021-01-01
+
+  - **BREAKING_CHANGE**: Update tokio to v1,
+
 # 0.4.0-beta.2 - 2020-11-23
 
   - **BREAKING_CHANGE**: do not enable default features on tungstenite.

@@ -12,12 +12,12 @@ rustc_version = "^0.3"
 [dependencies]
 [dependencies.async-tungstenite]
 default-features = false
-version = "^0.10"
+version = "^0.11"
 
 [dependencies.async_io_stream]
 default-features = false
 features = ["map_pharos"]
-version = "^0.2.0-beta"
+version = "^0.2"
 
 [dependencies.bitflags]
 default-features = false
@@ -46,7 +46,7 @@ version = "^0.4"
 [dependencies.tokio]
 default-features = false
 optional = true
-version = "^0.3"
+version = "^1"
 
 [dependencies.tungstenite]
 default-features = false
@@ -61,7 +61,7 @@ futures-test = "^0.3"
 futures-timer = "^3"
 futures_codec = "^0.4"
 futures_ringbuf = "^0.2"
-pin-utils = "^0.1.0-alpha"
+pin-utils = "^0.1"
 pretty_assertions = "^0.6"
 url = "^2"
 
@@ -71,17 +71,17 @@ version = "^1"
 
 [dev-dependencies.async-tungstenite]
 features = ["tokio-runtime", "async-std-runtime"]
-version = "^0.10"
+version = "^0.11"
 
 [dev-dependencies.tokio]
 default-features = false
-features = ["net", "stream", "rt", "rt-multi-thread", "macros"]
-version = "^0.3"
+features = ["net", "rt", "rt-multi-thread", "macros"]
+version = "^1"
 
 [dev-dependencies.tokio-util]
 default-features = false
 features = ["codec"]
-version = "^0.5"
+version = "^0.6"
 
 [features]
 default = []
@@ -100,7 +100,7 @@ license = "Unlicense"
 name = "ws_stream_tungstenite"
 readme = "README.md"
 repository = "https://github.com/najamelan/ws_stream_tungstenite"
-version = "0.4.0-beta.2"
+version = "0.4.0"
 
 [package.metadata]
 [package.metadata.docs]

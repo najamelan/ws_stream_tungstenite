@@ -24,9 +24,9 @@ async fn protocol_error()
 
 	let server = async
 	{
-		let mut socket: TcpListener = TcpListener::bind( "127.0.0.1:3016" ).await.expect( "bind to port" );
+		let socket: TcpListener = TcpListener::bind( "127.0.0.1:3016" ).await.expect( "bind to port" );
 
-		let tcp_stream = socket.next().await.expect( "1 connection" ).expect( "tcp connect" );
+		let (tcp_stream, _peer_addr) = socket.accept().await.expect( "tcp connect" );
 		let s          = accept_async(TokioAdapter(tcp_stream)).await.expect("Error during the websocket handshake occurred");
 		let mut server = WsStream::new( s );
 

@@ -19,25 +19,25 @@ async fn main()
 	// flexi_logger::Logger::with_str( "echo_tt=trace, tokio=trace, tungstenite=trace, tokio_tungstenite=trace" ).start().unwrap();
 
 	let addr: SocketAddr = env::args().nth(1).unwrap_or_else( || "127.0.0.1:3212".to_string() ).parse().unwrap();
-	let mut incoming = TcpListener::bind( addr ).await.unwrap();
+	let socket = TcpListener::bind( addr ).await.unwrap();
 
 	println!( "Listening on: {}", addr );
 
 
-	while let Some( stream ) = incoming.next().await
+	loop
 	{
-		tokio::spawn( handle_conn( stream ) );
+		tokio::spawn( handle_conn( socket.accept().await ) );
 	}
 }
 
 
-async fn handle_conn( conn: Result< TcpStream, std::io::Error > )
+async fn handle_conn( conn: Result< (TcpStream, SocketAddr), std::io::Error > )
 {
 	// If the TCP stream fails, we stop processing this connection
 	//
-	let tcp_stream = match conn
+	let (tcp_stream, peer_addr) = match conn
 	{
-		Ok(tcp) => tcp,
+		Ok(tuple) => tuple,
 		Err(_) =>
 		{
 			debug!( "Failed TCP incoming connection" );
@@ -46,7 +46,6 @@ async fn handle_conn( conn: Result< TcpStream, std::io::Error > )
 	};
 
 
-	let addr      = tcp_stream.peer_addr().expect( "connected streams should have a peer address" );
 	let handshake = accept_async( TokioAdapter(tcp_stream) );
 
 
@@ -65,7 +64,7 @@ async fn handle_conn( conn: Result< TcpStream, std::io::Error > )
 
 	let (sink, stream) = ttung.split();
 
-	println!( "New WebSocket connection: {}", addr );
+	println!( "New WebSocket connection: {}", peer_addr );
 
 
 	match stream.forward( sink ).await

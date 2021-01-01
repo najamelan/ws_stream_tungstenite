@@ -24,7 +24,7 @@ package:
   # - `git tag x.x.x` with version number.
   # - `git push && git push --tags`
   #
-  version       : 0.4.0-beta.2
+  version       : 0.4.0
   name          : ws_stream_tungstenite
   edition       : '2018'
   authors       : [ Naja Melan <najamelan@autistici.org> ]
@@ -70,18 +70,18 @@ dependencies:
   log               : { version: ^0.4 , default-features: false }
   tungstenite       : { version: ^0.11, default-features: false }
   pharos            : { version: ^0.4 , default-features: false }
-  async-tungstenite : { version: ^0.10, default-features: false }
-  tokio             : { version: ^0.3 , optional: true, default-features: false }
+  async-tungstenite : { version: ^0.11, default-features: false }
+  tokio             : { version: ^1 , optional: true, default-features: false }
 
   # private deps
   #
   bitflags          : { version: ^1, default-features: false }
-  async_io_stream   : { version: ^0.2.0-beta, features: [ map_pharos ], default-features: false }
+  async_io_stream   : { version: ^0.2, features: [ map_pharos ], default-features: false }
 
 dev-dependencies:
 
   async-std           : { version: ^1, features: [ attributes ] }
-  async-tungstenite   : { version: ^0.10, features: [ tokio-runtime, async-std-runtime ] }
+  async-tungstenite   : { version: ^0.11, features: [ tokio-runtime, async-std-runtime ] }
   assert_matches      : ^1.3
   async_progress      : ^0.1
   flexi_logger        : ^0.16
@@ -91,10 +91,11 @@ dev-dependencies:
   futures_codec       : ^0.4
   futures_ringbuf     : ^0.2
   pretty_assertions   : ^0.6
-  tokio               : { version: ^0.3, default-features: false, features: [ net, stream, rt, rt-multi-thread, macros ] }
-  tokio-util          : { version: ^0.5, default-features: false, features: [ codec ] }
+  tokio               : { version: ^1, default-features: false, features: [ net, rt, rt-multi-thread, macros ] }
+  tokio-util          : { version: ^0.6, default-features: false, features: [ codec ] }
+  # tokio-stream        : { version: ^0.1, default-features: false, features: [] }
   url                 : ^2
-  pin-utils           : ^0.1.0-alpha
+  pin-utils           : ^0.1
 
 
 build-dependencies:

@@ -28,10 +28,10 @@ async fn partial()
 
 	let server = async move
 	{
-		let mut socket = TcpListener::bind( "127.0.0.1:3013" ).await.expect( "bind to port" );
-		let tcp_stream = socket.next().await.expect( "1 connection" ).expect( "tcp connect" );
-		let s          = accept_async(TokioAdapter(tcp_stream)).await.expect("Error during the websocket handshake occurred");
-		let server     = WsStream::new( s );
+		let socket = TcpListener::bind( "127.0.0.1:3013" ).await.expect( "bind to port" );
+		let (tcp_stream, _sock_addr) = socket.accept().await.expect( "1 connection" );
+		let s      = accept_async(TokioAdapter(tcp_stream)).await.expect("Error during the websocket handshake occurred");
+		let server = WsStream::new( s );
 
 
 		let (mut sink, mut stream) = Framed::new( server, LinesCodec {} ).split();

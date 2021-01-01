@@ -3,12 +3,12 @@
 //
 use
 {
-	ws_stream_tungstenite :: { *                                                    } ,
-	futures               :: { StreamExt, AsyncReadExt, io::{ BufReader, copy_buf } } ,
-	std                   :: { env, net::SocketAddr, io                             } ,
-	log                   :: { *                                                    } ,
-	tokio                 :: { net::{ TcpListener, TcpStream }                      } ,
-	async_tungstenite     :: { accept_async, tokio::{ TokioAdapter }                } ,
+	ws_stream_tungstenite :: { *                                         } ,
+	futures               :: { AsyncReadExt, io::{ BufReader, copy_buf } } ,
+	std                   :: { env, net::SocketAddr, io                  } ,
+	log                   :: { *                                         } ,
+	tokio                 :: { net::{ TcpListener, TcpStream }           } ,
+	async_tungstenite     :: { accept_async, tokio::{ TokioAdapter }     } ,
 };
 
 
@@ -21,24 +21,23 @@ async fn main()
 	let addr: SocketAddr = env::args().nth(1).unwrap_or_else( || "127.0.0.1:3212".to_string() ).parse().unwrap();
 	println!( "server task listening at: {}", &addr );
 
-	let mut socket = TcpListener::bind(&addr).await.unwrap();
+	let socket = TcpListener::bind(&addr).await.unwrap();
 
-
-	while let Some( stream ) = socket.next().await
+	loop
 	{
-		tokio::spawn( handle_conn( stream ) );
+		tokio::spawn( handle_conn( socket.accept().await ) );
 	}
 }
 
 
-async fn handle_conn( stream: Result< TcpStream, io::Error> )
+async fn handle_conn( stream: Result< (TcpStream, SocketAddr), io::Error> )
 {
 
 	// If the TCP stream fails, we stop processing this connection
 	//
-	let tcp_stream = match stream
+	let (tcp_stream, peer_addr) = match stream
 	{
-		Ok(tcp) => tcp,
+		Ok( tuple ) => tuple,
 
 		Err(e) =>
 		{
@@ -47,7 +46,6 @@ async fn handle_conn( stream: Result< TcpStream, io::Error> )
 		}
 	};
 
-	let peer_addr = tcp_stream.peer_addr();
 	let s = accept_async( TokioAdapter(tcp_stream) ).await;
 
 	// If the Ws handshake fails, we stop processing this connection
@@ -64,7 +62,7 @@ async fn handle_conn( stream: Result< TcpStream, io::Error> )
 	};
 
 
-	info!( "Incoming connection from: {}", peer_addr.expect( "peer addr" ) );
+	info!( "Incoming connection from: {}", peer_addr );
 
 	let ws_stream = WsStream::new( socket );
 	let (reader, mut writer) = ws_stream.split();

@@ -277,7 +277,7 @@ impl<S: Unpin> Stream for TungWebSocket<S> where S: AsyncRead + AsyncWrite
 			{
 				// See the wildcard at the bottom for why we need this.
 				//
-				#[ allow(unreachable_patterns)]
+				#[ allow( unreachable_patterns, clippy::wildcard_in_or_patterns )]
 				//
 				match err
 				{
@@ -510,7 +510,7 @@ fn to_io_error( err: TungErr ) -> io::Error
 {
 	// See the wildcard at the bottom for why we need this.
 	//
-	#[ allow(unreachable_patterns)]
+	#[ allow( unreachable_patterns, clippy::wildcard_in_or_patterns )]
 	//
 	match err
 	{

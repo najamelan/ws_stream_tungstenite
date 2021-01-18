@@ -1,5 +1,9 @@
 # Changelog
 
+# 0.5.0 - 2021-01-18
+
+  - **BREAKING_CHANGE**: Update tungstenite and async-tungstenite to 0.12,
+
 # 0.4.0 - 2021-01-01
 
   - **BREAKING_CHANGE**: Update tokio to v1,

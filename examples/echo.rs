@@ -46,7 +46,7 @@ async fn handle_conn( stream: Result< (TcpStream, SocketAddr), io::Error> )
 		}
 	};
 
-	let s = accept_async( TokioAdapter(tcp_stream) ).await;
+	let s = accept_async( TokioAdapter::new(tcp_stream) ).await;
 
 	// If the Ws handshake fails, we stop processing this connection
 	//

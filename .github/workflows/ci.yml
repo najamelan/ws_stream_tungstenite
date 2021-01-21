@@ -1,0 +1,45 @@
+name: ci
+on  : [push, pull_request]
+
+jobs:
+
+  linux-stable:
+
+    name: Linux Rust Stable
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Install latest stable Rust
+        uses: actions-rs/toolchain@v1
+        with:
+            toolchain: stable
+            override: true
+            components: clippy
+
+
+      - name: Checkout crate
+        uses: actions/checkout@v2
+
+
+      - name: Run tests
+        run: bash ci/test.bash
+
+
+      - name: Build documentation
+        run: bash ci/doc.bash
+
+
+      - name: Check coverage
+        run: bash ci/coverage.bash
+
+
+      # - name: Prepare clippy
+      #   run : touch **.rs
+
+
+      # - name: Run cargo clippy
+      #   uses: actions-rs/cargo@v1
+      #   with:
+      #     command: clippy
+      #     args   : --tests --examples

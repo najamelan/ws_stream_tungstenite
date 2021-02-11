@@ -199,8 +199,8 @@ Api documentation can be found on [docs.rs](https://docs.rs/ws_stream_tungstenit
 
 The reference documents for understanding websockets and how the browser handles them are:
 - [RFC 6455 - The WebSocket Protocol](https://tools.ietf.org/html/rfc6455)
-- security of ws: https://blog.securityevaluators.com/websockets-not-bound-by-cors-does-this-mean-2e7819374acc?gi=e4a712f5f982
-- another: https://www.christian-schneider.net/CrossSiteWebSocketHijacking.html
+- security of ws: [WebSockets not Bound by SOP and CORS? Does this mean…](https://blog.securityevaluators.com/websockets-not-bound-by-cors-does-this-mean-2e7819374acc?gi=e4a712f5f982)
+- another: [Cross-Site WebSocket Hijacking (CSWSH)](https://www.christian-schneider.net/CrossSiteWebSocketHijacking.html)
 
 
 ## Contributing

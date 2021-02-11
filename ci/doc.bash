@@ -10,5 +10,5 @@ set -x
 
 # only works on nightly because of features like doc_cfg and external_doc
 #
-cargo doc  --all-features --no-deps
-cargo test --all-features --doc
+cargo +nightly doc  --all-features --no-deps
+cargo +nightly test --all-features --doc

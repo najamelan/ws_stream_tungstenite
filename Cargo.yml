@@ -9,7 +9,7 @@ package:
   # - Update CHANGELOG.md.
   # - Update version numbers in Cargo.yml, Cargo.toml, install section of readme.
   #
-  # - `touch **.rs && cargo clippy --tests --examples --benches --all-features`
+  # - `touch **/*.rs && cargo clippy --tests --examples --benches --all-features`
   # - `cargo update`
   # - `cargo udeps --all-targets --all-features`
   # - `cargo audit`
@@ -77,6 +77,7 @@ dependencies:
   #
   bitflags          : { version: ^1, default-features: false }
   async_io_stream   : { version: ^0.2, features: [ map_pharos ], default-features: false }
+
 
 dev-dependencies:
 

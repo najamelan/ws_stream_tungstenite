@@ -1,6 +1,6 @@
 # Changelog
 
-# 0.5.0 - 2021-01-18
+# 0.5.0 - 2021-02-11
 
   - **BREAKING_CHANGE**: Update tungstenite and async-tungstenite to 0.12,
 

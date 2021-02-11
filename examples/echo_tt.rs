@@ -87,7 +87,7 @@ async fn handle_conn( conn: Result< (TcpStream, SocketAddr), std::io::Error > )
 
 			// Other errors we want to know about
 			//
-			_ => { panic!( e ) }
+			_ => { panic!( "{}", e ) }
 		}
 	}
 }

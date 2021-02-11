@@ -109,7 +109,7 @@ async fn server
 		match events.next().await.expect( "protocol error" )
 		{
 			WsEvent::Error( e ) => assert!(matches!( *e, WsErr::ReceivedText )),
-			evt                 => assert!( false, "{:?}", evt ),
+			evt                 => unreachable!( "{:?}", evt ),
 		}
 
 		trace!( "server: reader end" );

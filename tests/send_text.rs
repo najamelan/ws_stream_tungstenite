@@ -39,7 +39,7 @@ async fn send_text()
 		match events.next().await.expect( "protocol error" )
 		{
 			WsEvent::Error( e ) => assert!(matches!( *e, WsErr::ReceivedText )),
-			evt                 => assert!( false, "{:?}", evt ),
+			evt                 => unreachable!( "{:?}", evt ),
 		}
 
 		assert_eq!( None, framed.next().await.transpose().expect( "receive close stream" ) );

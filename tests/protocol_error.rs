@@ -39,7 +39,7 @@ async fn protocol_error()
 		match events.next().await.expect( "protocol error" )
 		{
 			WsEvent::Error( e ) => assert!(matches!( *e, WsErr::Protocol )),
-			evt                 => assert!( false, "{:?}", evt ),
+			evt                 => unreachable!( "{:?}", evt ),
 		}
 	};
 

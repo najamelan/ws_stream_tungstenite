@@ -58,9 +58,10 @@ async fn server
 {
 	let conf = WebSocketConfig
 	{
-		max_send_queue  : Some( 1 ),
-		max_message_size: None     ,
-		max_frame_size  : None     ,
+		max_send_queue        : Some( 1 ),
+		max_message_size      : None     ,
+		max_frame_size        : None     ,
+		accept_unmasked_frames: false    ,
 	};
 
 	let     tws    = WebSocketStream::from_raw_socket( sc, Role::Server, Some(conf) ).await;
@@ -108,7 +109,7 @@ async fn server
 		match events.next().await.expect( "protocol error" )
 		{
 			WsEvent::Error( e ) => assert!(matches!( *e, WsErr::ReceivedText )),
-			evt                 => assert!( false, "{:?}", evt ),
+			evt                 => unreachable!( "{:?}", evt ),
 		}
 
 		trace!( "server: reader end" );
@@ -131,9 +132,11 @@ async fn client
 {
 	let conf = WebSocketConfig
 	{
-		max_send_queue  : Some( 1 ),
-		max_message_size: None     ,
-		max_frame_size  : None     ,
+		max_send_queue        : Some( 1 ),
+		max_message_size      : None     ,
+		max_frame_size        : None     ,
+		accept_unmasked_frames: false    ,
+
 	};
 
 	let (mut sink, mut stream) = WebSocketStream::from_raw_socket( cs, Role::Client, Some(conf) ).await.split();

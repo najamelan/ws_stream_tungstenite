@@ -46,7 +46,7 @@ async fn handle_conn( conn: Result< (TcpStream, SocketAddr), std::io::Error > )
 	};
 
 
-	let handshake = accept_async( TokioAdapter(tcp_stream) );
+	let handshake = accept_async( TokioAdapter::new(tcp_stream) );
 
 
 	// If the Ws handshake fails, we stop processing this connection
@@ -87,7 +87,7 @@ async fn handle_conn( conn: Result< (TcpStream, SocketAddr), std::io::Error > )
 
 			// Other errors we want to know about
 			//
-			_ => { panic!( e ) }
+			_ => { panic!( "{}", e ) }
 		}
 	}
 }

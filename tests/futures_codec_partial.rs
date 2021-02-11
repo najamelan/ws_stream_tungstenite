@@ -30,7 +30,7 @@ async fn partial()
 	{
 		let socket = TcpListener::bind( "127.0.0.1:3013" ).await.expect( "bind to port" );
 		let (tcp_stream, _sock_addr) = socket.accept().await.expect( "1 connection" );
-		let s      = accept_async(TokioAdapter(tcp_stream)).await.expect("Error during the websocket handshake occurred");
+		let s      = accept_async(TokioAdapter::new(tcp_stream)).await.expect("Error during the websocket handshake occurred");
 		let server = WsStream::new( s );
 
 

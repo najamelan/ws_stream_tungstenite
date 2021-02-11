@@ -27,7 +27,7 @@ async fn protocol_error()
 		let socket: TcpListener = TcpListener::bind( "127.0.0.1:3016" ).await.expect( "bind to port" );
 
 		let (tcp_stream, _peer_addr) = socket.accept().await.expect( "tcp connect" );
-		let s          = accept_async(TokioAdapter(tcp_stream)).await.expect("Error during the websocket handshake occurred");
+		let s          = accept_async(TokioAdapter::new(tcp_stream)).await.expect("Error during the websocket handshake occurred");
 		let mut server = WsStream::new( s );
 
 		let mut events = server.observe( ObserveConfig::default() ).expect( "observe" );
@@ -39,7 +39,7 @@ async fn protocol_error()
 		match events.next().await.expect( "protocol error" )
 		{
 			WsEvent::Error( e ) => assert!(matches!( *e, WsErr::Protocol )),
-			evt                 => assert!( false, "{:?}", evt ),
+			evt                 => unreachable!( "{:?}", evt ),
 		}
 	};
 

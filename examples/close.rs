@@ -42,7 +42,7 @@ async fn server()
 	let socket = TcpListener::bind( "127.0.0.1:3012" ).await.unwrap();
 
 	let (tcp, _peer_addr) = socket.accept().await.expect( "1 connection" );
-	let s   = accept_async( TokioAdapter(tcp) ).await.expect( "ws handshake" );
+	let s   = accept_async( TokioAdapter::new(tcp) ).await.expect( "ws handshake" );
 	let ws  = WsStream::new( s );
 
 	let (mut sink, mut stream) = Framed::new( ws, LinesCodec {} ).split();

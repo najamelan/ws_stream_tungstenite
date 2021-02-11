@@ -26,7 +26,7 @@ async fn futures_codec()
 		let socket: TcpListener = TcpListener::bind( "127.0.0.1:3012" ).await.expect( "bind to port" );
 
 		let (tcp_stream, _peer_addr) = socket.accept().await.expect( "1 connection" );
-		let s      = accept_async( TokioAdapter(tcp_stream) ).await.expect("Error during the websocket handshake occurred");
+		let s      = accept_async( TokioAdapter::new(tcp_stream) ).await.expect("Error during the websocket handshake occurred");
 		let server = WsStream::new( s );
 
 		let (mut sink, mut stream) = Framed::new( server, LinesCodec {} ).split();

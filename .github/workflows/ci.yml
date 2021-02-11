@@ -17,6 +17,11 @@ jobs:
             override: true
             components: clippy
 
+      - name: Install nightly
+        uses: actions-rs/toolchain@v1
+        with:
+            toolchain: nightly
+
 
       - name: Checkout crate
         uses: actions/checkout@v2
@@ -34,12 +39,34 @@ jobs:
         run: bash ci/coverage.bash
 
 
-      # - name: Prepare clippy
-      #   run : touch **.rs
+  linux-nightly:
+
+    name: Linux Rust Nightly
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Install latest nightly Rust
+        uses: actions-rs/toolchain@v1
+        with:
+            toolchain: nightly
+            override: true
+            components: clippy
 
 
-      # - name: Run cargo clippy
-      #   uses: actions-rs/cargo@v1
-      #   with:
-      #     command: clippy
-      #     args   : --tests --examples
+      - name: Checkout crate
+        uses: actions/checkout@v2
+
+
+      - name: Run tests
+        run : bash ci/test.bash
+
+
+      - name: Run clippy
+        run : bash ci/clippy.bash
+
+
+      - name: Build documentation
+        run : bash ci/doc.bash
+
+

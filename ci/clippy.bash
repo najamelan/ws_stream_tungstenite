@@ -8,5 +8,6 @@ set -e
 #
 set -x
 
-touch **.rs
-cargo clippy --tests --examples --benches --all-features
+cargo clean
+cargo +nightly clippy --tests --examples --benches --all-features -- -D warnings
+

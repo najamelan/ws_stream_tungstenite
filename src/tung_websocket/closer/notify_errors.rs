@@ -5,9 +5,9 @@
 use crate :: { import::*, WsEvent, WsErr, tung_websocket::{ notifier::Notifier, closer::Closer } };
 
 
-#[ test ]
+#[ async_std::test ]
 //
-fn notify_errors()
+async fn notify_errors()
 {
 	// flexi_logger::Logger::with_str( "send_text_backpressure=trace, tungstenite=trace, tokio_tungstenite=trace, ws_stream_tungstenite=trace, tokio=warn" ).start().expect( "flexi_logger");
 
@@ -20,7 +20,7 @@ fn notify_errors()
 		let mut stream = ATungSocket::from_raw_socket( cs, Role::Client, None ).await.split().1;
 
 		let mut notif  = Notifier::new();
-		let mut events = notif.observe( ObserveConfig::default() ).expect( "observe server" );
+		let mut events = notif.observe( ObserveConfig::default() ).await.expect( "observe server" );
 		let mut closer = Closer::new();
 		let     waker  = noop_waker();
 		let mut cx     = Context::from_waker( &waker );

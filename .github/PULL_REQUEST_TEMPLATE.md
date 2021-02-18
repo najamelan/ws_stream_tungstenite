@@ -3,4 +3,4 @@
 
 <!--- Check CONTRIBUTING.md for more information-->
 
-<!--- Please describe the changes in the PR and them motivation below -->
+<!--- Please describe the changes in the PR and the motivation below -->

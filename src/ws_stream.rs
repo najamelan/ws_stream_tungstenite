@@ -29,14 +29,14 @@ use crate::{ import::*, tung_websocket::TungWebSocket, WsEvent, WsErr };
 /// When a Protocol error is encountered during writing, it indicates that either _ws_stream_tungstenite_ or _tungstenite_ have
 /// a bug so it will panic.
 //
-pub struct WsStream<S> where S: AsyncRead + AsyncWrite + Unpin
+pub struct WsStream<S> where S: AsyncRead + AsyncWrite + Send + Unpin
 {
 	inner: IoStream< TungWebSocket<S>, Vec<u8> >,
 }
 
 
 
-impl<S> WsStream<S> where S: AsyncRead + AsyncWrite + Unpin
+impl<S> WsStream<S> where S: AsyncRead + AsyncWrite + Send + Unpin
 {
 	/// Create a new WsStream.
 	//
@@ -51,7 +51,7 @@ impl<S> WsStream<S> where S: AsyncRead + AsyncWrite + Unpin
 
 
 
-impl<S> fmt::Debug for WsStream<S> where S: AsyncRead + AsyncWrite + Unpin
+impl<S> fmt::Debug for WsStream<S> where S: AsyncRead + AsyncWrite + Send + Unpin
 {
 	fn fmt( &self, f: &mut fmt::Formatter<'_> ) -> fmt::Result
 	{
@@ -61,7 +61,7 @@ impl<S> fmt::Debug for WsStream<S> where S: AsyncRead + AsyncWrite + Unpin
 
 
 
-impl<S> AsyncWrite for WsStream<S> where S: AsyncRead + AsyncWrite + Unpin
+impl<S> AsyncWrite for WsStream<S> where S: AsyncRead + AsyncWrite + Send + Unpin
 {
 	/// Will always flush the underlying socket. Will always create an entire Websocket message from every write,
 	/// so call with a sufficiently large buffer if you have performance problems. Don't call with a buffer larger
@@ -101,7 +101,7 @@ impl<S> AsyncWrite for WsStream<S> where S: AsyncRead + AsyncWrite + Unpin
 //
 #[ cfg_attr( nightly, doc(cfg( feature = "tokio_io" )) ) ]
 //
-impl<S> TokAsyncWrite for WsStream<S> where S: AsyncRead + AsyncWrite + Unpin
+impl<S> TokAsyncWrite for WsStream<S> where S: AsyncRead + AsyncWrite + Send + Unpin
 {
 	/// Will always flush the underlying socket. Will always create an entire Websocket message from every write,
 	/// so call with a sufficiently large buffer if you have performance problems. Don't call with a buffer larger
@@ -127,7 +127,7 @@ impl<S> TokAsyncWrite for WsStream<S> where S: AsyncRead + AsyncWrite + Unpin
 
 
 
-impl<S> AsyncRead  for WsStream<S> where S: AsyncRead + AsyncWrite + Unpin
+impl<S> AsyncRead  for WsStream<S> where S: AsyncRead + AsyncWrite + Send + Unpin
 {
 	fn poll_read( mut self: Pin<&mut Self>, cx: &mut Context<'_>, buf: &mut [u8] ) -> Poll< io::Result<usize> >
 	{
@@ -145,7 +145,7 @@ impl<S> AsyncRead  for WsStream<S> where S: AsyncRead + AsyncWrite + Unpin
 //
 #[ cfg_attr( nightly, doc(cfg( feature = "tokio_io" )) ) ]
 //
-impl<S> TokAsyncRead for WsStream<S> where S: AsyncRead + AsyncWrite + Unpin
+impl<S> TokAsyncRead for WsStream<S> where S: AsyncRead + AsyncWrite + Send + Unpin
 {
 	fn poll_read( mut self: Pin<&mut Self>, cx: &mut Context<'_>, buf: &mut tokio::io::ReadBuf<'_> ) -> Poll< io::Result<()> >
 	{
@@ -155,7 +155,7 @@ impl<S> TokAsyncRead for WsStream<S> where S: AsyncRead + AsyncWrite + Unpin
 
 
 
-impl<S> AsyncBufRead for WsStream<S> where S: AsyncRead + AsyncWrite + Unpin
+impl<S> AsyncBufRead for WsStream<S> where S: AsyncRead + AsyncWrite + Send + Unpin
 {
 	fn poll_fill_buf( self: Pin<&mut Self>, cx: &mut Context<'_> ) -> Poll< io::Result<&[u8]> >
 	{
@@ -171,12 +171,16 @@ impl<S> AsyncBufRead for WsStream<S> where S: AsyncRead + AsyncWrite + Unpin
 
 
 
-impl<S> Observable< WsEvent > for WsStream<S> where S: AsyncRead + AsyncWrite + Unpin
+impl<S> Observable< WsEvent > for WsStream<S> where S: AsyncRead + AsyncWrite + Send + Unpin
 {
 	type Error = WsErr;
 
-	fn observe( &mut self, options: ObserveConfig< WsEvent > ) -> Result< Events< WsEvent >, Self::Error >
+	fn observe( &mut self, options: ObserveConfig< WsEvent > ) -> Observe< '_, WsEvent, Self::Error >
 	{
-		self.inner.observe( options ).map_err( Into::into )
+		async move
+		{
+			self.inner.observe( options ).await.map_err( Into::into )
+
+		}.boxed()
 	}
 }

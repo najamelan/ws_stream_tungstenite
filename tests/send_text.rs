@@ -28,7 +28,7 @@ async fn send_text()
 		let (tcp_stream, _peer_addr) = socket.accept().await.expect( "tcp connect" );
 		let s          = accept_async(TokioAdapter::new(tcp_stream)).await.expect("Error during the websocket handshake occurred");
 		let mut server = WsStream::new( s );
-		let mut events = server.observe( ObserveConfig::default() ).expect( "observe server" );
+		let mut events = server.observe( ObserveConfig::default() ).await.expect( "observe server" );
 
 		let mut framed = Framed::new( server, LinesCodec {} );
 

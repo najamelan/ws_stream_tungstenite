@@ -48,12 +48,13 @@ mod import
 		futures_core      :: { ready, Stream                                                                                } ,
 		futures_sink      :: { Sink                                                                                         } ,
 		futures_io        :: { AsyncRead, AsyncWrite, AsyncBufRead                                                          } ,
+		futures_util      :: { FutureExt                                                                                    } ,
 		log               :: { error                                                                                        } ,
 		std               :: { io, io::{ IoSlice, IoSliceMut }, pin::Pin, fmt, borrow::Cow                                  } ,
 		std               :: { collections::VecDeque, sync::Arc, task::{ Context, Poll }                                    } ,
 		async_tungstenite :: { WebSocketStream as ATungSocket                                                               } ,
 		tungstenite       :: { Message as TungMessage, Error as TungErr, protocol::{ CloseFrame, frame::coding::CloseCode } } ,
-		pharos            :: { Observable, ObserveConfig, Events, Pharos                                                    } ,
+		pharos            :: { Observable, ObserveConfig, Observe, Pharos, PharErr                                          } ,
 		async_io_stream   :: { IoStream                                                                                     } ,
 	};
 

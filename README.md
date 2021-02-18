@@ -1,7 +1,7 @@
 # ws_stream_tungstenite
 
 [![standard-readme compliant](https://img.shields.io/badge/readme%20style-standard-brightgreen.svg?style=flat-square)](https://github.com/RichardLitt/standard-readme)
-[![Build Status](https://api.travis-ci.org/najamelan/ws_stream_tungstenite.svg?branch=master)](https://travis-ci.org/najamelan/ws_stream_tungstenite)
+[![Build Status](https://github.com/najamelan/ws_stream_tungstenite/workflows/ci/badge.svg?branch=master)](https://github.com/najamelan/ws_stream_tungstenite/actions)
 [![Docs](https://docs.rs/ws_stream_tungstenite/badge.svg)](https://docs.rs/ws_stream_tungstenite)
 [![crates.io](https://img.shields.io/crates/v/ws_stream_tungstenite.svg)](https://crates.io/crates/ws_stream_tungstenite)
 
@@ -46,14 +46,14 @@ With [cargo yaml](https://gitlab.com/storedbox/cargo-yaml):
 ```yaml
 dependencies:
 
-  ws_stream_tungstenite: ^0.5
+  ws_stream_tungstenite: ^0.6
 ```
 
 With raw Cargo.toml
 ```toml
 [dependencies]
 
-   ws_stream_tungstenite = "0.5"
+   ws_stream_tungstenite = "0.6"
 ```
 
 ### Upgrade

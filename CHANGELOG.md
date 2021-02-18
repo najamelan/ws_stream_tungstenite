@@ -1,36 +1,42 @@
 # Changelog
 
+# 0.6.0 - 2021-02-18
+
+  - **BREAKING_CHANGE**: Update tungstenite and async-tungstenite to 0.13
+  - **BREAKING_CHANGE**: Update pharos to 0.5
+  - Update async_io_stream to 0.3
+
 # 0.5.0 - 2021-02-11
 
-  - **BREAKING_CHANGE**: Update tungstenite and async-tungstenite to 0.12,
+  - **BREAKING_CHANGE**: Update tungstenite and async-tungstenite to 0.12
 
 # 0.4.0 - 2021-01-01
 
-  - **BREAKING_CHANGE**: Update tokio to v1,
+  - **BREAKING_CHANGE**: Update tokio to v1
 
 # 0.4.0-beta.2 - 2020-11-23
 
-  - **BREAKING_CHANGE**: do not enable default features on tungstenite.
+  - **BREAKING_CHANGE**: do not enable default features on tungstenite
   - remove thiserror.
 
 # 0.4.0-beta.1 - 2020-11-03
 
-  - **BREAKING_CHANGE**: update tokio to 0.3 and async-tungstenite to 0.10. Will go out of beta when tokio releases 1.0.
+  - **BREAKING_CHANGE**: update tokio to 0.3 and async-tungstenite to 0.10. Will go out of beta when tokio releases 1.0
 
 # 0.3.0 - 2020-10-01
 
-  - **BREAKING_CHANGE**: update async-tungstenite to 0.8 and tungstenite to 0.11.
+  - **BREAKING_CHANGE**: update async-tungstenite to 0.8 and tungstenite to 0.11
 
 # 0.2.0 - 2020-06-10
 
-  - **BREAKING_CHANGE**: update async-tungstenite to 0.5.
+  - **BREAKING_CHANGE**: update async-tungstenite to 0.5
   - correct a documentation mistake
-  - chores.
+  - chores
 
 # 0.1.0 - 2020-03-21
 
-  - **BREAKING_CHANGE**: Switch to async_tungstenite as backend, we are now framework agnostic.
-  - **BREAKING_CHANGE**: Rename error type to WsErr.
+  - **BREAKING_CHANGE**: Switch to async_tungstenite as backend, we are now framework agnostic
+  - **BREAKING_CHANGE**: Rename error type to WsErr
 
   - Implement tokio `AsyncRead`/`AsyncWrite` for WsStream (Behind a feature flag).
   - delegate implementation of `AsyncRead`/`AsyncWrite`/`AsyncBufRead` to _async_io_stream_. This allows

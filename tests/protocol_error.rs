@@ -30,7 +30,7 @@ async fn protocol_error()
 		let s          = accept_async(TokioAdapter::new(tcp_stream)).await.expect("Error during the websocket handshake occurred");
 		let mut server = WsStream::new( s );
 
-		let mut events = server.observe( ObserveConfig::default() ).expect( "observe" );
+		let mut events = server.observe( ObserveConfig::default() ).await.expect( "observe" );
 		let mut framed = Framed::new( server, LinesCodec {} );
 
 
@@ -56,10 +56,14 @@ async fn protocol_error()
 		let frame = CloseFrame
 		{
 			code  : CloseCode::Protocol            ,
-			reason: "Control frame too big".into() ,
+			reason: "Control frame too big (payload must be 125 bytes or less)".into() ,
 		};
 
-		assert_eq!( Some( tungstenite::Message::Close( Some(frame) )), socket.next().await.transpose().expect( "close" ) );
+		assert_eq!
+		(
+			Some( tungstenite::Message::Close( Some(frame) )),
+			socket.next().await.transpose().expect( "close" )
+		);
 
 		trace!( "drop websocket" );
 	};

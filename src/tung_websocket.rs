@@ -39,7 +39,7 @@ bitflags!
 /// A wrapper around a WebSocket provided by tungstenite. This provides Stream/Sink Vec<u8> to
 /// simplify implementing AsyncRead/AsyncWrite on top of tokio-tungstenite.
 //
-pub(crate) struct TungWebSocket<S>  where S: AsyncRead + AsyncWrite + Unpin
+pub(crate) struct TungWebSocket<S>  where S: AsyncRead + AsyncWrite + Send + Unpin
 {
 	inner: ATungSocket<S> ,
 
@@ -49,7 +49,7 @@ pub(crate) struct TungWebSocket<S>  where S: AsyncRead + AsyncWrite + Unpin
 }
 
 
-impl<S> TungWebSocket<S> where S: AsyncRead + AsyncWrite + Unpin
+impl<S> TungWebSocket<S> where S: AsyncRead + AsyncWrite + Send + Unpin
 {
 	/// Create a new Wrapper for a WebSocket provided by Tungstenite
 	//
@@ -158,7 +158,7 @@ impl<S> TungWebSocket<S> where S: AsyncRead + AsyncWrite + Unpin
 
 
 
-impl<S: Unpin> Stream for TungWebSocket<S> where S: AsyncRead + AsyncWrite
+impl<S: Unpin> Stream for TungWebSocket<S> where S: AsyncRead + AsyncWrite + Send
 {
 	type Item = Result<Vec<u8>, io::Error>;
 
@@ -318,11 +318,11 @@ impl<S: Unpin> Stream for TungWebSocket<S> where S: AsyncRead + AsyncWrite
 					// On every call to write on WsStream, we create a full ws message and the poll_write
 					// only
 					//
-					TungErr::Protocol( ref string ) =>
+					TungErr::Protocol( ref proto_err ) =>
 					{
 						// If this returns pending, we don't want to recurse, the task will be woken up.
 						//
-						ready!( self.as_mut().send_closeframe( CloseCode::Protocol, string.clone(), cx ) );
+						ready!( self.as_mut().send_closeframe( CloseCode::Protocol, proto_err.to_string().into(), cx ) );
 
 
 						self.queue_event( WsEvent::Error( Arc::new( WsErr::from(err) )) );
@@ -391,7 +391,7 @@ impl<S: Unpin> Stream for TungWebSocket<S> where S: AsyncRead + AsyncWrite
 
 
 
-impl<S> Sink<Vec<u8>> for TungWebSocket<S> where S: AsyncRead + AsyncWrite + Unpin
+impl<S> Sink<Vec<u8>> for TungWebSocket<S> where S: AsyncRead + AsyncWrite + Send + Unpin
 {
 	type Error = io::Error;
 
@@ -568,13 +568,17 @@ fn to_io_error( err: TungErr ) -> io::Error
 }
 
 
-impl<S> Observable< WsEvent > for TungWebSocket<S> where S: AsyncRead + AsyncWrite + Unpin
+impl<S> Observable< WsEvent > for TungWebSocket<S> where S: AsyncRead + AsyncWrite + Send + Unpin
 {
 	type Error = WsErr;
 
-	fn observe( &mut self, options: ObserveConfig< WsEvent > ) -> Result< Events< WsEvent >, Self::Error >
+	fn observe( &mut self, options: ObserveConfig< WsEvent > ) -> Observe< '_, WsEvent, Self::Error >
 	{
-		self.notifier.observe( options ).map_err( Into::into )
+		async move
+		{
+			self.notifier.observe( options ).await.map_err( Into::into )
+
+		}.boxed()
 	}
 }
 

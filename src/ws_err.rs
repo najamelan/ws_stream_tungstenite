@@ -118,9 +118,9 @@ impl From< io::Error > for WsErr
 
 
 
-impl From< pharos::Error > for WsErr
+impl From< PharErr > for WsErr
 {
-	fn from( source: pharos::Error ) -> WsErr
+	fn from( source: PharErr ) -> WsErr
 	{
 		match source.kind()
 		{

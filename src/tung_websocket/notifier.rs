@@ -175,9 +175,13 @@ impl Observable< WsEvent > for Notifier
 {
 	type Error = WsErr;
 
-	fn observe( &mut self, options: ObserveConfig< WsEvent > ) -> Result< Events< WsEvent >, Self::Error >
+	fn observe( &mut self, options: ObserveConfig< WsEvent > ) -> Observe< '_,  WsEvent, Self::Error >
 	{
-		self.pharos.observe( options ).map_err( Into::into )
+		async move
+		{
+			self.pharos.observe( options ).await.map_err( Into::into )
+
+		}.boxed()
 	}
 }
 
@@ -230,12 +234,12 @@ mod tests
 
 	// verify state changes using an observer that provides back pressure
 	//
-	#[ test ]
+	#[ async_std::test ]
 	//
-	fn notifier_state_observers()
+	async fn notifier_state_observers()
 	{
 		let mut not  = Notifier::new();
-		let mut evts = not.observe( Channel::Bounded( 1 ).into() ).expect( "observe" );
+		let mut evts = not.observe( Channel::Bounded( 1 ).into() ).await.expect( "observe" );
 
 			assert_eq!( State::Ready, not.state        );
 			assert_eq!(            0, not.events.len() );

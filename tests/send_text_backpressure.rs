@@ -66,7 +66,7 @@ async fn server
 
 	let     tws    = WebSocketStream::from_raw_socket( sc, Role::Server, Some(conf) ).await;
 	let mut ws     = WsStream::new( tws );
-	let mut events = ws.observe( ObserveConfig::default() ).expect( "observe server" );
+	let mut events = ws.observe( ObserveConfig::default() ).await.expect( "observe server" );
 
 	let (mut sink, mut stream) = Framed::new( ws, LinesCodec {} ).split();
 

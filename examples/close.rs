@@ -4,7 +4,7 @@ use
 {
 	ws_stream_tungstenite  :: { *                                            } ,
 	futures                :: { TryFutureExt, StreamExt, SinkExt, join, executor::block_on } ,
-	futures_codec          :: { LinesCodec, Framed                           } ,
+	asynchronous_codec     :: { LinesCodec, Framed                           } ,
 	tokio                  :: { net::{ TcpListener }                         } ,
 	futures                :: { FutureExt, select, future::{ ok, ready }     } ,
 	async_tungstenite      :: { accept_async, tokio::{ TokioAdapter, connect_async } } ,

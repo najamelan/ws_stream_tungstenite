@@ -6,7 +6,7 @@ use
 {
 	ws_stream_tungstenite :: { *                                                    } ,
 	futures               :: { StreamExt, SinkExt, future::join                     } ,
-	futures_codec         :: { LinesCodec, Framed                                   } ,
+	asynchronous_codec    :: { LinesCodec, Framed                                   } ,
 	tokio                 :: { net::{ TcpListener }                                 } ,
 	async_tungstenite     :: { accept_async, tokio::{ connect_async, TokioAdapter } } ,
 	url                   :: { Url                                                  } ,

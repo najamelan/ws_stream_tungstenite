@@ -5,7 +5,7 @@ use
 	ws_stream_tungstenite :: { *                                                                                  } ,
 	std                   :: { future::Future                                                                     } ,
 	futures               :: { StreamExt, SinkExt, executor::block_on, future::join                               } ,
-	futures_codec         :: { LinesCodec, Framed                                                                 } ,
+	asynchronous_codec    :: { LinesCodec, Framed                                                                 } ,
 	async_tungstenite     :: { WebSocketStream                                                                    } ,
 	tungstenite           :: { protocol::{ WebSocketConfig, CloseFrame, frame::coding::CloseCode, Role }, Message } ,
 	pharos                :: { Observable, ObserveConfig                                                          } ,

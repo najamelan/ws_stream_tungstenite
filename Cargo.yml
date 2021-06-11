@@ -90,7 +90,7 @@ dev-dependencies:
   futures             : ^0.3
   futures-test        : ^0.3
   futures-timer       : ^3
-  futures_codec       : ^0.4
+  asynchronous-codec  : ^0.6
   futures_ringbuf     : ^0.3
   # pretty_assertions   : ^0.6
   tokio               : { version: ^1, default-features: false, features: [ net, rt, rt-multi-thread, macros ] }

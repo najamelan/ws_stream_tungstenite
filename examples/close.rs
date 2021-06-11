@@ -19,12 +19,13 @@ use
 
 fn main()
 {
-	flexi_logger::Logger::with_str( "close=info, tungstenite=warn, tokio_tungstenite=warn, ws_stream_tungstenite=warn" )
+	flexi_logger::Logger
 
+		::try_with_str( "close=info, tungstenite=warn, tokio_tungstenite=warn, ws_stream_tungstenite=warn" )
+		.expect( "flexi_logger")
 		.start()
-		.expect( "init flexi_logger")
+		.expect( "flexi_logger")
 	;
-
 
 	block_on( async
 	{

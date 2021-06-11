@@ -24,9 +24,10 @@ package:
   # - `git tag x.x.x` with version number.
   # - `git push && git push --tags`
   #
-  version       : 0.6.0
+  version       : 0.6.1
   name          : ws_stream_tungstenite
   edition       : '2018'
+  resolver      : '2'
   authors       : [ Naja Melan <najamelan@autistici.org> ]
   description   : Provide AsyncRead/AsyncWrite over Tungstenite WebSockets
   license       : Unlicense
@@ -85,12 +86,12 @@ dev-dependencies:
   async-std           : { version: ^1, features: [ attributes ] }
   async-tungstenite   : { version: ^0.13, features: [ tokio-runtime, async-std-runtime ] }
   assert_matches      : ^1.3
-  async_progress      : ^0.1
-  flexi_logger        : ^0.17
+  async_progress      : ^0.2
+  flexi_logger        : ^0.18
   futures             : ^0.3
   futures-test        : ^0.3
   futures-timer       : ^3
-  futures_codec       : ^0.4
+  asynchronous-codec  : ^0.6
   futures_ringbuf     : ^0.3
   # pretty_assertions   : ^0.6
   tokio               : { version: ^1, default-features: false, features: [ net, rt, rt-multi-thread, macros ] }
@@ -102,7 +103,7 @@ dev-dependencies:
 
 build-dependencies:
 
-  rustc_version: ^0.3
+  rustc_version: ^0.4
 
 
 profile:

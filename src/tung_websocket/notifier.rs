@@ -197,7 +197,7 @@ mod tests
 	// ✔ queue get's filled up and emptied
 	// ✔ verify everything get's delivered correctly after pharos gives back pressure
 	//
-	use super::*;
+	use super::{ *, assert_matches };
 
 
 	// verify state becomes pending when queing something and get's reset after calling run without observers.

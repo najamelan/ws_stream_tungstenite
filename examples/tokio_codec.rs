@@ -18,7 +18,13 @@ use
 //
 async fn main()
 {
-	flexi_logger::Logger::with_str( "futures_ringbuf=info, tokio_codec=trace, tokio_util=trace, ws_stream_tungstenite=trace, tokio=trace" ).start().expect( "flexi_logger");
+	flexi_logger::Logger
+
+		::try_with_str( "futures_ringbuf=info, tokio_codec=trace, tokio_util=trace, ws_stream_tungstenite=trace, tokio=trace" )
+		.expect( "flexi_logger")
+		.start()
+		.expect( "flexi_logger")
+	;
 
 	let (server_con, client_con) = Endpoint::pair( 64, 64 );
 

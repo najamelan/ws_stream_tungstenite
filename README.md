@@ -90,12 +90,12 @@ This is the most basic idea (for client code):
 ```rust, no_run
 use
 {
-   ws_stream_tungstenite :: { *                                    } ,
-   futures               :: { StreamExt                            } ,
-   log                   :: { *                                    } ,
-   async_tungstenite     :: { accept_async                         } ,
-   futures_codec         :: { LinesCodec, Framed                   } ,
-   async_std             :: { net::TcpListener                     } ,
+   ws_stream_tungstenite :: { *                  } ,
+   futures               :: { StreamExt          } ,
+   log                   :: { *                  } ,
+   async_tungstenite     :: { accept_async       } ,
+   asynchronous_codec    :: { LinesCodec, Framed } ,
+   async_std             :: { net::TcpListener   } ,
  };
 
 #[ async_std::main ]

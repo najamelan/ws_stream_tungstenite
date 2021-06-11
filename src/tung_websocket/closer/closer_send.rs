@@ -2,7 +2,7 @@
 //
 // ✔ closer actually sends out on sink
 //
-use crate :: { import::*, tung_websocket::{ notifier::Notifier, closer::Closer } };
+use crate :: { import::{ *, assert_matches }, tung_websocket::{ notifier::Notifier, closer::Closer } };
 
 
 #[ test ]

@@ -2,7 +2,7 @@
 //
 // ✔ notifiying errors through pharos
 //
-use crate :: { import::*, WsEvent, WsErr, tung_websocket::{ notifier::Notifier, closer::Closer } };
+use crate :: { import::{ *, assert_matches }, WsEvent, WsErr, tung_websocket::{ notifier::Notifier, closer::Closer } };
 
 
 #[ async_std::test ]

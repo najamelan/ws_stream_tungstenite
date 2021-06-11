@@ -24,9 +24,10 @@ package:
   # - `git tag x.x.x` with version number.
   # - `git push && git push --tags`
   #
-  version       : 0.6.0
+  version       : 0.6.1
   name          : ws_stream_tungstenite
   edition       : '2018'
+  resolver      : '2'
   authors       : [ Naja Melan <najamelan@autistici.org> ]
   description   : Provide AsyncRead/AsyncWrite over Tungstenite WebSockets
   license       : Unlicense

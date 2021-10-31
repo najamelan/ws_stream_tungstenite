@@ -86,6 +86,10 @@ default-features = false
 features = ["codec"]
 version = "^0.6"
 
+[[example]]
+name = "tokio_codec"
+required-features = ["tokio_io"]
+
 [features]
 default = []
 tokio_io = ["tokio", "async_io_stream/tokio_io"]

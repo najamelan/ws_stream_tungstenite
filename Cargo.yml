@@ -111,3 +111,8 @@ profile:
   release:
 
     codegen-units: 1
+
+example:
+
+  - name             : tokio_codec
+    required-features: [ tokio_io ]

@@ -115,5 +115,6 @@ profile:
 example:
 
   - name             : tokio_codec
+    path             : tokio_codec.rs
     required-features: [ tokio_io ]
 

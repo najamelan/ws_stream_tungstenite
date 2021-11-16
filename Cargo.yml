@@ -24,9 +24,9 @@ package:
   # - `git tag x.x.x` with version number.
   # - `git push && git push --tags`
   #
-  version       : 0.6.1
+  version       : 0.6.2
   name          : ws_stream_tungstenite
-  edition       : '2018'
+  edition       : '2021'
   resolver      : '2'
   authors       : [ Naja Melan <najamelan@autistici.org> ]
   description   : Provide AsyncRead/AsyncWrite over Tungstenite WebSockets
@@ -65,15 +65,15 @@ dependencies:
 
   # public deps. Bump major version if you change their version number here.
   #
-  futures-core      : { version: ^0.3 , default-features: false }
-  futures-sink      : { version: ^0.3 , default-features: false }
-  futures-io        : { version: ^0.3 , default-features: false }
-  futures-util      : { version: ^0.3 , default-features: false }
-  log               : { version: ^0.4 , default-features: false }
-  tungstenite       : { version: ^0.13, default-features: false }
-  pharos            : { version: ^0.5 , default-features: false }
-  async-tungstenite : { version: ^0.13, default-features: false }
-  tokio             : { version: ^1 , optional: true, default-features: false }
+  futures-core      : { version: ^0.3 , default-features: false                 }
+  futures-sink      : { version: ^0.3 , default-features: false                 }
+  futures-io        : { version: ^0.3 , default-features: false                 }
+  futures-util      : { version: ^0.3 , default-features: false                 }
+  log               : { version: ^0.4 , default-features: false                 }
+  tungstenite       : { version: ^0.16, default-features: false                 }
+  pharos            : { version: ^0.5 , default-features: false                 }
+  async-tungstenite : { version: ^0.16, default-features: false                 }
+  tokio             : { version: ^1   , default-features: false, optional: true }
 
   # private deps
   #
@@ -84,10 +84,10 @@ dependencies:
 dev-dependencies:
 
   async-std           : { version: ^1, features: [ attributes ] }
-  async-tungstenite   : { version: ^0.13, features: [ tokio-runtime, async-std-runtime ] }
-  assert_matches      : ^1.3
+  async-tungstenite   : { version: ^0.16, features: [ tokio-runtime, async-std-runtime ] }
+  assert_matches      : ^1
   async_progress      : ^0.2
-  flexi_logger        : ^0.18
+  flexi_logger        : ^0.20
   futures             : ^0.3
   futures-test        : ^0.3
   futures-timer       : ^3
@@ -111,3 +111,10 @@ profile:
   release:
 
     codegen-units: 1
+
+example:
+
+  - name             : tokio_codec
+    path             : tokio_codec.rs
+    required-features: [ tokio_io ]
+

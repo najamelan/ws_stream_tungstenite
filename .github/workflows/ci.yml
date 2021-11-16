@@ -35,10 +35,6 @@ jobs:
         run: bash ci/doc.bash
 
 
-      - name: Check coverage
-        run: bash ci/coverage.bash
-
-
   linux-nightly:
 
     name: Linux Rust Nightly
@@ -68,5 +64,20 @@ jobs:
 
       - name: Build documentation
         run : bash ci/doc.bash
+
+
+      - name: Install cargo-tarpaulin binary crate
+        uses: actions-rs/install@v0.1
+        with:
+          crate: cargo-tarpaulin
+          version: latest
+          use-tool-cache: true
+
+      - name: Run cargo-tarpaulin
+        run : |
+          cargo tarpaulin --out Xml
+
+      - name: Upload to codecov.io
+        uses: codecov/codecov-action@v1.5.2
 
 

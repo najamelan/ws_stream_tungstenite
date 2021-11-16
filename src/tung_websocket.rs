@@ -531,11 +531,12 @@ fn to_io_error( err: TungErr ) -> io::Error
 
 		// This shouldn't happen, we should not cause any protocol errors, since we abstract
 		// away the websocket protocol for users. They shouldn't be able to trigger this through our API.
+		// AFAICT the only one you can trigger on send is SendAfterClose unless you create control
+		// frames yourself, which we don't.
 		//
-		TungErr::Protocol(_string) =>
+		TungErr::Protocol(source) =>
 		{
-			unreachable!( "protocol error from tungstenite on send is bug in ws_stream_tungstenite, please report" );
-			// io::Error::new( io::ErrorKind::ConnectionReset, string )
+			unreachable!( "protocol error from tungstenite on send is a bug in ws_stream_tungstenite, please report at http://github.com/najamelan/ws_stream_tungstenite/issues. The error from tungstenite is {}", source );
 		}
 
 

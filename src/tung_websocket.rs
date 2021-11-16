@@ -532,9 +532,9 @@ fn to_io_error( err: TungErr ) -> io::Error
 		// This shouldn't happen, we should not cause any protocol errors, since we abstract
 		// away the websocket protocol for users. They shouldn't be able to trigger this through our API.
 		//
-		TungErr::Protocol(_string) =>
+		TungErr::Protocol(string) =>
 		{
-			unreachable!( "protocol error from tungstenite on send is bug in ws_stream_tungstenite, please report" );
+			unreachable!( "protocol error from tungstenite on send is bug in ws_stream_tungstenite, please report at http://github.com/najamelan/ws_stream_tungstenite/issues. The error from tungstenite is {}", string );
 			// io::Error::new( io::ErrorKind::ConnectionReset, string )
 		}
 

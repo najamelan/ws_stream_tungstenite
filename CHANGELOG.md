@@ -4,7 +4,8 @@
 ## [Unreleased]
 
   [Unreleased]: https://github.com/najamelan/ws_stream_tungstenite/compare/0.6.1...dev
-
+  
+  - update dependencies
 
 ## [0.6.1]
 

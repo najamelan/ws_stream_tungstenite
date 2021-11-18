@@ -3,16 +3,21 @@
 
 ## [Unreleased]
 
-  [Unreleased]: https://github.com/najamelan/ws_stream_tungstenite/compare/0.6.2...dev
+  [Unreleased]: https://github.com/najamelan/ws_stream_tungstenite/compare/0.7.0...dev
 
 
-## [0.6.2]
+## [0.7.0]
 
-  [0.6.2]: https://github.com/najamelan/ws_stream_tungstenite/compare/0.6.1...0.6.2
+  [0.7.0]: https://github.com/najamelan/ws_stream_tungstenite/compare/0.6.1...0.7.0
   
-  - update dependencies
+  - **BREAKING_CHANGE**: update dependencies
   - In search of the cause of: https://github.com/najamelan/ws_stream_tungstenite/issues/7 error reporting
     has been improved. However until now have been unable to reproduce the issue.
+
+
+## [0.6.2] 
+
+  YANKED: has become 0.7.0 because it was a breaking change.
 
 ## [0.6.1]
 

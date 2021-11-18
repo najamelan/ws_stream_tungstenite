@@ -24,7 +24,7 @@ package:
   # - `git tag x.x.x` with version number.
   # - `git push && git push --tags`
   #
-  version       : 0.6.2
+  version       : 0.7.0
   name          : ws_stream_tungstenite
   edition       : '2021'
   resolver      : '2'

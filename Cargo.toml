@@ -88,7 +88,7 @@ version = "^0.6"
 
 [[example]]
 name = "tokio_codec"
-path = "tokio_codec.rs"
+path = "examples/tokio_codec.rs"
 required-features = ["tokio_io"]
 
 [features]
@@ -109,7 +109,7 @@ name = "ws_stream_tungstenite"
 readme = "README.md"
 repository = "https://github.com/najamelan/ws_stream_tungstenite"
 resolver = "2"
-version = "0.6.2"
+version = "0.7.0"
 
 [package.metadata]
 [package.metadata.docs]

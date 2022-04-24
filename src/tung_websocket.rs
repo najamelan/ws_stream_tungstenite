@@ -268,6 +268,11 @@ impl<S: Unpin> Stream for TungWebSocket<S> where S: AsyncRead + AsyncWrite + Sen
 						self.queue_event( WsEvent::Pong(data) );
 						self.poll_next( cx )
 					}
+
+					TungMessage::Frame(_) =>
+					{
+						unreachable!("A Message::Frame(..) should be never occur from a read")
+					}
 				}
 			}
 

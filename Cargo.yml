@@ -95,7 +95,7 @@ dev-dependencies:
   futures_ringbuf     : ^0.3
   # pretty_assertions   : ^0.6
   tokio               : { version: ^1, default-features: false, features: [ net, rt, rt-multi-thread, macros ] }
-  tokio-util          : { version: ^0.6, default-features: false, features: [ codec ] }
+  tokio-util          : { version: ^0.7, default-features: false, features: [ codec ] }
   # tokio-stream        : { version: ^0.1, default-features: false, features: [] }
   url                 : ^2
   pin-utils           : ^0.1

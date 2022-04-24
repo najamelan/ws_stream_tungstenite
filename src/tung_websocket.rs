@@ -271,7 +271,7 @@ impl<S: Unpin> Stream for TungWebSocket<S> where S: AsyncRead + AsyncWrite + Sen
 
 					TungMessage::Frame(_) =>
 					{
-						unreachable!("A Message::Frame(..) should be never occur from a read")
+						unreachable!( "A Message::Frame(..) should be never occur from a read" );
 					}
 				}
 			}
@@ -384,10 +384,7 @@ impl<S: Unpin> Stream for TungWebSocket<S> where S: AsyncRead + AsyncWrite + Sen
 					// is only there if they have a feature enabled. Since we cannot check whether
 					// a feature is enabled on a dependency, we have to go for wildcard here.
 					//
-					_ =>
-
-						unreachable!( "{:?}", err ),
-
+					_ => unreachable!( "{:?}", err ),
 				}
 			}
 		}

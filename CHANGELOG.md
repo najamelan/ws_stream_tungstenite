@@ -3,7 +3,14 @@
 
 ## [Unreleased]
 
-  [Unreleased]: https://github.com/najamelan/ws_stream_tungstenite/compare/0.7.0...dev
+  [Unreleased]: https://github.com/najamelan/ws_stream_tungstenite/compare/0.8.0...dev
+
+
+## [0.8.0]
+
+  [0.8.0]: https://github.com/najamelan/ws_stream_tungstenite/compare/0.7.0...0.8.0
+  
+  - **BREAKING_CHANGE**: update tungstenite to 0.17
 
 
 ## [0.7.0]

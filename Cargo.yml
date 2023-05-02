@@ -70,24 +70,24 @@ dependencies:
   futures-io        : { version: ^0.3 , default-features: false                 }
   futures-util      : { version: ^0.3 , default-features: false                 }
   log               : { version: ^0.4 , default-features: false                 }
-  tungstenite       : { version: ^0.17, default-features: false                 }
+  tungstenite       : { version: ^0.19, default-features: false                 }
   pharos            : { version: ^0.5 , default-features: false                 }
-  async-tungstenite : { version: ^0.18, default-features: false                 }
+  async-tungstenite : { version: ^0.22, default-features: false                 }
   tokio             : { version: ^1   , default-features: false, optional: true }
 
   # private deps
   #
-  bitflags          : { version: ^1, default-features: false }
+  bitflags          : { version: ^2, default-features: false }
   async_io_stream   : { version: ^0.3, features: [ map_pharos ], default-features: false }
 
 
 dev-dependencies:
 
   async-std           : { version: ^1, features: [ attributes ] }
-  async-tungstenite   : { version: ^0.18, features: [ tokio-runtime, async-std-runtime ] }
+  async-tungstenite   : { version: ^0.22, features: [ tokio-runtime, async-std-runtime ] }
   assert_matches      : ^1
   async_progress      : ^0.2
-  flexi_logger        : ^0.24
+  flexi_logger        : ^0.25
   futures             : ^0.3
   futures-test        : ^0.3
   futures-timer       : ^3

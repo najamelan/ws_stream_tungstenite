@@ -32,7 +32,6 @@ async fn main()
 
 async fn handle_conn( stream: Result< (TcpStream, SocketAddr), io::Error> )
 {
-
 	// If the TCP stream fails, we stop processing this connection
 	//
 	let (tcp_stream, peer_addr) = match stream

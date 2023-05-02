@@ -377,8 +377,6 @@ impl<S: Unpin> Stream for TungWebSocket<S> where S: AsyncRead + AsyncWrite + Sen
 					// These are handshake errors:
 					//
 					TungErr::Url        (_)  |
-					TungErr::HttpFormat (_)  |
-					TungErr::Http       (_)  |
 
 					// I'd rather have this match exhaustive, but tungstenite has a Tls variant that
 					// is only there if they have a feature enabled. Since we cannot check whether
@@ -554,8 +552,6 @@ fn to_io_error( err: TungErr ) -> io::Error
 
 		// These are handshake errors
 		//
-		TungErr::Http      (..) |
-		TungErr::HttpFormat(..) |
 		TungErr::Url       (..) |
 
 		// This is an error specific to Text Messages that we don't use

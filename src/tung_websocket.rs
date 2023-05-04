@@ -377,12 +377,11 @@ impl<S: Unpin> Stream for TungWebSocket<S> where S: AsyncRead + AsyncWrite + Sen
 					// These are handshake errors:
 					//
 					TungErr::Url        (_)  |
-					TungErr::HttpFormat (_)  |
-					TungErr::Http       (_)  |
 
 					// I'd rather have this match exhaustive, but tungstenite has a Tls variant that
 					// is only there if they have a feature enabled. Since we cannot check whether
 					// a feature is enabled on a dependency, we have to go for wildcard here.
+					// As of tungstenite 0.19 Http and HttpFormat are also behind a feature flag.
 					//
 					_ => unreachable!( "{:?}", err ),
 				}
@@ -554,8 +553,6 @@ fn to_io_error( err: TungErr ) -> io::Error
 
 		// These are handshake errors
 		//
-		TungErr::Http      (..) |
-		TungErr::HttpFormat(..) |
 		TungErr::Url       (..) |
 
 		// This is an error specific to Text Messages that we don't use
@@ -565,6 +562,7 @@ fn to_io_error( err: TungErr ) -> io::Error
 		// I'd rather have this match exhaustive, but tungstenite has a Tls variant that
 		// is only there if they have a feature enabled. Since we cannot check whether
 		// a feature is enabled on a dependency, we have to go for wildcard here.
+		// As of tungstenite 0.19 Http and HttpFormat are also behind a feature flag.
 		//
 		_ => unreachable!() ,
 	}

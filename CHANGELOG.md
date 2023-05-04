@@ -3,12 +3,19 @@
 
 ## [Unreleased]
 
-  [Unreleased]: https://github.com/najamelan/ws_stream_tungstenite/compare/0.9.0...dev
+  [Unreleased]: https://github.com/najamelan/ws_stream_tungstenite/compare/0.10.0...dev
 
+
+## [0.10.0]
+
+  [0.10.0]: https://github.com/najamelan/ws_stream_tungstenite/compare/0.9.0...0.10.0
+  
+  - **BREAKING_CHANGE**: update async-tungstenite to 0.22
+  - **BREAKING_CHANGE**: update tungstenite to 0.19
 
 ## [0.9.0]
 
-  [0.8.0]: https://github.com/najamelan/ws_stream_tungstenite/compare/0.8.0...0.9.0
+  [0.9.0]: https://github.com/najamelan/ws_stream_tungstenite/compare/0.8.0...0.9.0
   
   - **BREAKING_CHANGE**: update tungstenite to 0.18
 

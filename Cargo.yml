@@ -11,6 +11,7 @@ package:
   #
   # - `touch **/*.rs && cargo clippy --tests --examples --benches --all-features`
   # - `cargo update`
+  # - `cargo outdated --root-deps-only`
   # - `cargo +nightly udeps --all-targets --all-features`
   # - `cargo audit`
   # - `cargo crev crate verify --show-all --recursive` and review.
@@ -24,10 +25,9 @@ package:
   # - `git tag x.x.x` with version number.
   # - `git push && git push --tags`
   #
-  version       : 0.9.0
+  version       : 0.10.0
   name          : ws_stream_tungstenite
   edition       : '2021'
-  resolver      : '2'
   authors       : [ Naja Melan <najamelan@autistici.org> ]
   description   : Provide AsyncRead/AsyncWrite over Tungstenite WebSockets
   license       : Unlicense
@@ -70,24 +70,24 @@ dependencies:
   futures-io        : { version: ^0.3 , default-features: false                 }
   futures-util      : { version: ^0.3 , default-features: false                 }
   log               : { version: ^0.4 , default-features: false                 }
-  tungstenite       : { version: ^0.17, default-features: false                 }
+  tungstenite       : { version: ^0.19, default-features: false                 }
   pharos            : { version: ^0.5 , default-features: false                 }
-  async-tungstenite : { version: ^0.18, default-features: false                 }
+  async-tungstenite : { version: ^0.22, default-features: false                 }
   tokio             : { version: ^1   , default-features: false, optional: true }
 
   # private deps
   #
-  bitflags          : { version: ^1, default-features: false }
+  bitflags          : { version: ^2, default-features: false }
   async_io_stream   : { version: ^0.3, features: [ map_pharos ], default-features: false }
 
 
 dev-dependencies:
 
   async-std           : { version: ^1, features: [ attributes ] }
-  async-tungstenite   : { version: ^0.18, features: [ tokio-runtime, async-std-runtime ] }
+  async-tungstenite   : { version: ^0.22, features: [ tokio-runtime, async-std-runtime ] }
   assert_matches      : ^1
   async_progress      : ^0.2
-  flexi_logger        : ^0.24
+  flexi_logger        : ^0.25
   futures             : ^0.3
   futures-test        : ^0.3
   futures-timer       : ^3

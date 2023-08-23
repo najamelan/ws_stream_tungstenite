@@ -372,7 +372,7 @@ impl<S: Unpin> Stream for TungWebSocket<S> where S: AsyncRead + AsyncWrite + Sen
 					//
 					// This should only happen in the write side:
 					//
-					TungErr::SendQueueFull(_) |
+					TungErr::WriteBufferFull(_) |
 
 					// These are handshake errors:
 					//
@@ -549,7 +549,7 @@ fn to_io_error( err: TungErr ) -> io::Error
 		// This is dealt with by backpressure in the compat layer over tokio-tungstenite.
 		// We should never see this error.
 		//
-		TungErr::SendQueueFull(_) |
+		TungErr::WriteBufferFull(_) |
 
 		// These are handshake errors
 		//

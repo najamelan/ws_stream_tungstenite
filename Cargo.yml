@@ -70,9 +70,9 @@ dependencies:
   futures-io        : { version: ^0.3 , default-features: false                 }
   futures-util      : { version: ^0.3 , default-features: false                 }
   log               : { version: ^0.4 , default-features: false                 }
-  tungstenite       : { version: ^0.19, default-features: false                 }
+  tungstenite       : { version: ^0.20, default-features: false                 }
   pharos            : { version: ^0.5 , default-features: false                 }
-  async-tungstenite : { version: ^0.22, default-features: false                 }
+  async-tungstenite : { version: ^0.23, default-features: false                 }
   tokio             : { version: ^1   , default-features: false, optional: true }
 
   # private deps
@@ -84,7 +84,7 @@ dependencies:
 dev-dependencies:
 
   async-std           : { version: ^1, features: [ attributes ] }
-  async-tungstenite   : { version: ^0.22, features: [ tokio-runtime, async-std-runtime ] }
+  async-tungstenite   : { version: ^0.23, features: [ tokio-runtime, async-std-runtime ] }
   assert_matches      : ^1
   async_progress      : ^0.2
   flexi_logger        : ^0.25

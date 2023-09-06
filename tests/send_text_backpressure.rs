@@ -12,8 +12,21 @@ use
 	assert_matches        :: { assert_matches                                                                     } ,
 	async_progress        :: { Progress                                                                           } ,
 	futures_ringbuf       :: { Endpoint                                                                           } ,
-	log                   :: { *                                                                                  } ,
+	tracing               :: { *                                                                                  } ,
 };
+
+pub fn setup_tracing()
+{
+	tracing_log::LogTracer::init().expect( "setup tracing_log" );
+
+	let _ = tracing_subscriber::fmt::Subscriber::builder()
+
+		.with_env_filter( "trace" )
+		// .with_timer( tracing_subscriber::fmt::time::ChronoLocal::rfc3339() )
+		.json()
+	   .try_init()
+	;
+}
 
 
 // Make sure the close handshake gets completed correctly if the read end detects a protocol error and
@@ -31,18 +44,17 @@ use
 //
 fn send_text_backpressure()
 {
-	// flexi_logger::Logger::with_str( "send_text_backpressure=trace, async_progress=trace, tungstenite=warn, tokio_tungstenite=warn, ws_stream_tungstenite=warn, tokio=warn" ).start().expect( "flexi_logger");
+	// setup_tracing();
 
-	let (sc, cs) = Endpoint::pair( 37, 22 );
+	let (sc, cs) = Endpoint::pair( 37, 50 );
 
 	let steps       = Progress::new( Step::FillQueue );
 	let send_text   = steps.once( Step::SendText   );
 	let read_text   = steps.once( Step::ReadText   );
 	let client_read = steps.once( Step::ClientRead );
 
-
 	let server = server( read_text, steps.clone(), sc );
-	let client = client( send_text, client_read, steps, cs );
+	let client = client( send_text, client_read, steps, cs ).instrument( tracing::info_span!( "client_span" ) );
 
 	block_on( join( server, client ) );
 	info!( "end test" );
@@ -56,12 +68,9 @@ async fn server
 	sc        : Endpoint       ,
 )
 {
-	let conf = WebSocketConfig
-	{
-		max_send_queue        : Some( 1 ),
-		max_message_size      : None     ,
-		max_frame_size        : None     ,
-		accept_unmasked_frames: false    ,
+	let conf = WebSocketConfig{
+		write_buffer_size: 0,
+		..Default::default()
 	};
 
 	let     tws    = WebSocketStream::from_raw_socket( sc, Role::Server, Some(conf) ).await;
@@ -81,7 +90,8 @@ async fn server
 		//
 		steps.set_state( Step::SendText ).await;
 
-		sink.send( "ho\n".to_string() ).await.expect( "Send second line" );
+		// With the message from above, this is bigger than 37 bytes, so it will block on the underlying transport.
+		sink.send( "ho block\n".to_string() ).await.expect( "Send second line" );
 
 		trace!( "server: writer end" );
 	};
@@ -96,15 +106,13 @@ async fn server
 		//
 		steps.set_state( Step::ClientRead ).await;
 
-		warn!( "read the text on server, should return None" );
+		warn!( "server: read the text, should return None" );
 
-		let res = stream.next().await.transpose();
+		let res = stream.next().await;
 
-		assert!( res.is_ok()  );
-		assert!( res.unwrap().is_none()  );
+		assert!(res.is_none());
 
-
-		info!( "assert protocol error" );
+		info!( "server: assert protocol error" );
 
 		match events.next().await.expect( "protocol error" )
 		{
@@ -114,6 +122,9 @@ async fn server
 
 		trace!( "server: reader end" );
 	};
+
+	let reader = reader.instrument( tracing::info_span!( "server_reader" ) );
+	let writer = writer.instrument( tracing::info_span!( "server_writer" ) );
 
 	join( reader, writer ).await;
 
@@ -130,13 +141,9 @@ async fn client
 	cs          : Endpoint       ,
 )
 {
-	let conf = WebSocketConfig
-	{
-		max_send_queue        : Some( 1 ),
-		max_message_size      : None     ,
-		max_frame_size        : None     ,
-		accept_unmasked_frames: false    ,
-
+	let conf = WebSocketConfig{
+		write_buffer_size: 0,
+		..Default::default()
 	};
 
 	let (mut sink, mut stream) = WebSocketStream::from_raw_socket( cs, Role::Client, Some(conf) ).await.split();
@@ -170,11 +177,11 @@ async fn client
 
 	warn!( "client: waiting on close frame" );
 
-	assert_eq!( Some( tungstenite::Message::Close( Some(frame) )), stream.next().await.transpose().expect( "close" ) );
+	assert_eq!( Some( tungstenite::Message::Close( Some(frame) )), stream.next().await.transpose().expect( "client: receive close frame" ) );
 
 	// As tungstenite needs input to send out the response to the close frame, we need to keep polling
 	//
-	assert_eq!( None, stream.next().await.transpose().expect( "close" ) );
+	assert_eq!( None, stream.next().await.transpose().expect( "client: stream closed" ) );
 
 	trace!( "client: drop websocket" );
 }

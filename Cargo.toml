@@ -39,10 +39,6 @@ version = "^0.3"
 default-features = false
 version = "^0.3"
 
-[dependencies.log]
-default-features = false
-version = "^0.4"
-
 [dependencies.pharos]
 default-features = false
 version = "^0.5"
@@ -52,6 +48,9 @@ default-features = false
 optional = true
 version = "^1"
 
+[dependencies.tracing]
+version = "^0.1"
+
 [dependencies.tungstenite]
 default-features = false
 version = "^0.20"
@@ -60,12 +59,12 @@ version = "^0.20"
 assert_matches = "^1"
 async_progress = "^0.2"
 asynchronous-codec = "^0.6"
-flexi_logger = "^0.25"
 futures = "^0.3"
 futures-test = "^0.3"
 futures-timer = "^3"
 futures_ringbuf = "^0.3"
 pin-utils = "^0.1"
+tracing-log = "^0.1"
 url = "^2"
 
 [dev-dependencies.async-std]
@@ -85,6 +84,11 @@ version = "^1"
 default-features = false
 features = ["codec"]
 version = "^0.7"
+
+[dev-dependencies.tracing-subscriber]
+default-features = false
+features = ["ansi", "env-filter", "fmt", "json", "tracing-log"]
+version = "^0.3"
 
 [[example]]
 name = "tokio_codec"
@@ -108,7 +112,7 @@ license = "Unlicense"
 name = "ws_stream_tungstenite"
 readme = "README.md"
 repository = "https://github.com/najamelan/ws_stream_tungstenite"
-version = "0.10.0"
+version = "0.11.0"
 
 [package.metadata]
 [package.metadata.docs]

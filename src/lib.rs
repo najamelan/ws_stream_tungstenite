@@ -36,7 +36,6 @@ pub use
 };
 
 
-
 mod import
 {
 	pub(crate) use
@@ -46,7 +45,7 @@ mod import
 		futures_sink      :: { Sink                                                                                         } ,
 		futures_io        :: { AsyncRead, AsyncWrite, AsyncBufRead                                                          } ,
 		futures_util      :: { FutureExt                                                                                    } ,
-		log               :: { error                                                                                        } ,
+		tracing           :: { error                                                                                        } ,
 		std               :: { io, io::{ IoSlice, IoSliceMut }, pin::Pin, fmt, borrow::Cow                                  } ,
 		std               :: { collections::VecDeque, sync::Arc, task::{ Context, Poll }                                    } ,
 		async_tungstenite :: { WebSocketStream as ATungSocket                                                               } ,
@@ -77,7 +76,7 @@ mod import
 		futures_ringbuf   :: { Endpoint                               } ,
 		futures           :: { future::{ join }                       } ,
 		tungstenite       :: { protocol::{ Role }                     } ,
-		log               :: { *                                      } ,
+		tracing           :: { *                                      } ,
 	};
 }
 

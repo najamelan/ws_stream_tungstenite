@@ -12,8 +12,7 @@ use
 	tokio                 :: { net::{ TcpListener }                                 } ,
 	async_tungstenite     :: { accept_async, tokio::{ connect_async, TokioAdapter } } ,
 	url                   :: { Url                                                  } ,
-
-	log :: { * } ,
+	tracing               :: { *                                                    } ,
 };
 
 
@@ -21,8 +20,6 @@ use
 //
 async fn tokio_codec()
 {
-	// flexi_logger::Logger::with_str( "tokio_util=trace, ws_stream_tungstenite=trace, tokio=warn" ).start().expect( "flexi_logger");
-
 	let server = async
 	{
 		let socket = TcpListener::bind( "127.0.0.1:3012" ).await.expect( "bind to port" );

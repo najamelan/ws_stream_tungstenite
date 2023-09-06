@@ -92,7 +92,7 @@ use
 {
    ws_stream_tungstenite :: { *                  } ,
    futures               :: { StreamExt          } ,
-   log                   :: { *                  } ,
+   tracing               :: { *                  } ,
    async_tungstenite     :: { accept_async       } ,
    asynchronous_codec    :: { LinesCodec, Framed } ,
    async_std             :: { net::TcpListener   } ,

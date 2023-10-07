@@ -6,9 +6,9 @@
   [Unreleased]: https://github.com/najamelan/ws_stream_tungstenite/compare/0.11.0...dev
 
 
-## [0.11.0 - 2023-10-07]
+## [0.11.0] - 2023-10-07
 
-  [0.11.0]: https://github.com/najamelan/ws_stream_tungstenite/compare/0.9.0...0.10.0
+  [0.11.0]: https://github.com/najamelan/ws_stream_tungstenite/compare/0.10.0...0.11.0
   
   - **BREAKING_CHANGE**/**SECURITY UPDATE**: update tungstenite to 0.20.1. 
     See: [RUSTSEC-2023-0065](https://rustsec.org/advisories/RUSTSEC-2023-0065).

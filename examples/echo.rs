@@ -6,7 +6,7 @@ use
 	ws_stream_tungstenite :: { *                                         } ,
 	futures               :: { AsyncReadExt, io::{ BufReader, copy_buf } } ,
 	std                   :: { env, net::SocketAddr, io                  } ,
-	log                   :: { *                                         } ,
+	tracing               :: { *                                         } ,
 	tokio                 :: { net::{ TcpListener, TcpStream }           } ,
 	async_tungstenite     :: { accept_async, tokio::{ TokioAdapter }     } ,
 };

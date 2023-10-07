@@ -7,7 +7,7 @@ use
 	futures           :: { StreamExt                         } ,
 	async_tungstenite :: { accept_async, tokio::TokioAdapter } ,
 	tokio             :: { net::{ TcpListener, TcpStream }   } ,
-	log               :: { *                                 } ,
+	tracing           :: { *                                 } ,
 	std               :: { env, net::SocketAddr              } ,
 };
 

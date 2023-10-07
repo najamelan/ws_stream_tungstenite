@@ -3,7 +3,27 @@
 
 ## [Unreleased]
 
-  [Unreleased]: https://github.com/najamelan/ws_stream_tungstenite/compare/0.10.0...dev
+  [Unreleased]: https://github.com/najamelan/ws_stream_tungstenite/compare/0.11.0...dev
+
+
+## [0.11.0 - 2023-10-07]
+
+  [0.11.0]: https://github.com/najamelan/ws_stream_tungstenite/compare/0.9.0...0.10.0
+  
+  - **BREAKING_CHANGE**/**SECURITY UPDATE**: update tungstenite to 0.20.1. 
+    See: [RUSTSEC-2023-0065](https://rustsec.org/advisories/RUSTSEC-2023-0065).
+    Make sure to check how the new version of tungstenite 
+    [handles buffering](https://docs.rs/tungstenite/latest/tungstenite/protocol/struct.WebSocketConfig.html) 
+    messages before sending them. Having `write_buffer_size` to anything but `0` might cause
+    messages not to be sent until you flush. _ws_stream_tungstenite_ will make sure to respect
+    `max_write_buffer_size`, so you shouldn't have to deal with the errors, but note that if
+    you set it to something really small it might lead to performance issues on throughput.
+    I wanted to roll this version out fast for the security vulnerability, but note that the 
+    implementation of `AsyncWrite::poll_write_vectored` that handles compliance with `max_write_buffer_size`
+    currently has no tests. If you want to use it, please review the code.     
+  - **BREAKING_CHANGE**: update async-tungstenite to 0.23
+  - **BREAKING_CHANGE**: switched to tracing for logging (check out the _tracing-log_ crate
+    if you need to consume the events with a log consumer)
 
 
 ## [0.10.0]
@@ -12,6 +32,7 @@
   
   - **BREAKING_CHANGE**: update async-tungstenite to 0.22
   - **BREAKING_CHANGE**: update tungstenite to 0.19
+
 
 ## [0.9.0]
 

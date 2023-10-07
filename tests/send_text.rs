@@ -2,16 +2,15 @@
 //
 use
 {
-	ws_stream_tungstenite :: { *                                                      } ,
-	futures               :: { StreamExt, SinkExt, future::join                       } ,
-	asynchronous_codec    :: { LinesCodec, Framed                                     } ,
-	tokio                 :: { net::{ TcpListener }                                   } ,
-	async_tungstenite     :: { accept_async, tokio::{ connect_async, TokioAdapter }   } ,
-	url                   :: { Url                                                    } ,
-	pharos                :: { Observable, ObserveConfig                              } ,
-	tungstenite           :: { protocol::{ CloseFrame, frame::coding::CloseCode }     } ,
-
-	log :: { * } ,
+	ws_stream_tungstenite :: { *                                                    } ,
+	futures               :: { StreamExt, SinkExt, future::join                     } ,
+	asynchronous_codec    :: { LinesCodec, Framed                                   } ,
+	tokio                 :: { net::{ TcpListener }                                 } ,
+	async_tungstenite     :: { accept_async, tokio::{ connect_async, TokioAdapter } } ,
+	url                   :: { Url                                                  } ,
+	pharos                :: { Observable, ObserveConfig                            } ,
+	tungstenite           :: { protocol::{ CloseFrame, frame::coding::CloseCode }   } ,
+	tracing               :: { *                                                    } ,
 };
 
 

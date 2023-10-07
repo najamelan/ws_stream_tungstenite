@@ -10,8 +10,7 @@ use
 	tokio                 :: { net::{ TcpListener }                                 } ,
 	async_tungstenite     :: { accept_async, tokio::{ connect_async, TokioAdapter } } ,
 	url                   :: { Url                                                  } ,
-
-	log :: { * } ,
+	tracing               :: { *                                                    } ,
 };
 
 

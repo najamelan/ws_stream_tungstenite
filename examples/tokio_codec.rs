@@ -4,13 +4,12 @@
 //
 use
 {
+	tungstenite           :: { protocol::Role                   } ,
 	ws_stream_tungstenite :: { *                                } ,
 	futures               :: { StreamExt, SinkExt, future::join } ,
 	tokio_util::codec     :: { LinesCodec, Framed               } ,
 	futures_ringbuf       :: { Endpoint                         } ,
-
-	log :: { * } ,
-	tungstenite::{ protocol::Role } ,
+	tracing               :: { *                                } ,
 };
 
 
@@ -18,14 +17,6 @@ use
 //
 async fn main()
 {
-	flexi_logger::Logger
-
-		::try_with_str( "futures_ringbuf=info, tokio_codec=trace, tokio_util=trace, ws_stream_tungstenite=trace, tokio=trace" )
-		.expect( "flexi_logger")
-		.start()
-		.expect( "flexi_logger")
-	;
-
 	let (server_con, client_con) = Endpoint::pair( 64, 64 );
 
 	let server = async move

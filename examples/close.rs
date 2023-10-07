@@ -2,31 +2,23 @@
 //
 use
 {
-	ws_stream_tungstenite  :: { *                                            } ,
+	ws_stream_tungstenite  :: { *                                                          } ,
 	futures                :: { TryFutureExt, StreamExt, SinkExt, join, executor::block_on } ,
-	asynchronous_codec     :: { LinesCodec, Framed                           } ,
-	tokio                  :: { net::{ TcpListener }                         } ,
-	futures                :: { FutureExt, select, future::{ ok, ready }     } ,
-	async_tungstenite      :: { accept_async, tokio::{ TokioAdapter, connect_async } } ,
-	url                    :: { Url                                          } ,
-	log                    :: { *                                            } ,
-	std                    :: { time::Duration                               } ,
-	futures_timer          :: { Delay                                        } ,
-	pin_utils              :: { pin_mut                                      } ,
+	asynchronous_codec     :: { LinesCodec, Framed                                         } ,
+	tokio                  :: { net::{ TcpListener }                                       } ,
+	futures                :: { FutureExt, select, future::{ ok, ready }                   } ,
+	async_tungstenite      :: { accept_async, tokio::{ TokioAdapter, connect_async }       } ,
+	url                    :: { Url                                                        } ,
+	tracing               :: { *                                                           } ,
+	std                    :: { time::Duration                                             } ,
+	futures_timer          :: { Delay                                                      } ,
+	pin_utils              :: { pin_mut                                                    } ,
 };
 
 
 
 fn main()
 {
-	flexi_logger::Logger
-
-		::try_with_str( "close=info, tungstenite=warn, tokio_tungstenite=warn, ws_stream_tungstenite=warn" )
-		.expect( "flexi_logger")
-		.start()
-		.expect( "flexi_logger")
-	;
-
 	block_on( async
 	{
 		join!( server(), client() );

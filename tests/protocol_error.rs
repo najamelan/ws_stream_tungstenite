@@ -10,8 +10,7 @@ use
 	url                   :: { Url                                                  } ,
 	pharos                :: { Observable, ObserveConfig                            } ,
 	tungstenite           :: { protocol::{ CloseFrame, frame::coding::CloseCode }   } ,
-
-	log :: { * } ,
+	tracing               :: { *                                                    } ,
 };
 
 

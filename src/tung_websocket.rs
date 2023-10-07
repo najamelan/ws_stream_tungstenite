@@ -37,7 +37,7 @@ bitflags!
 
 
 /// A wrapper around a WebSocket provided by tungstenite. This provides Stream/Sink Vec<u8> to
-/// simplify implementing AsyncRead/AsyncWrite on top of tokio-tungstenite.
+/// simplify implementing AsyncRead/AsyncWrite on top of async-tungstenite.
 //
 pub(crate) struct TungWebSocket<S>  where S: AsyncRead + AsyncWrite + Send + Unpin
 {
@@ -372,7 +372,7 @@ impl<S: Unpin> Stream for TungWebSocket<S> where S: AsyncRead + AsyncWrite + Sen
 					//
 					// This should only happen in the write side:
 					//
-					TungErr::SendQueueFull(_) |
+					TungErr::WriteBufferFull(_) |
 
 					// These are handshake errors:
 					//
@@ -546,25 +546,26 @@ fn to_io_error( err: TungErr ) -> io::Error
 		TungErr::Capacity(string) => io::Error::new( io::ErrorKind::InvalidData, string ),
 
 
-		// This is dealt with by backpressure in the compat layer over tokio-tungstenite.
-		// We should never see this error.
+		// This can happen if we send a message bigger than the tungstenite `max_write_buffer_len`.
+		// However `WsStream` looks at the size of this buffer and only sends up to `max_write_buffer_len`
+		// bytes in one message.
 		//
-		TungErr::SendQueueFull(_) |
+		TungErr::WriteBufferFull(_) => unreachable!( "TungErr::WriteBufferFull" ),
 
 		// These are handshake errors
 		//
-		TungErr::Url       (..) |
+		TungErr::Url(_) => unreachable!( "TungErr::Url" ),
 
 		// This is an error specific to Text Messages that we don't use
 		//
-		TungErr::Utf8 |
+		TungErr::Utf8 => unreachable!( "TungErr::Utf8" ),
 
 		// I'd rather have this match exhaustive, but tungstenite has a Tls variant that
 		// is only there if they have a feature enabled. Since we cannot check whether
 		// a feature is enabled on a dependency, we have to go for wildcard here.
 		// As of tungstenite 0.19 Http and HttpFormat are also behind a feature flag.
 		//
-		_ => unreachable!() ,
+		x => unreachable!( "unmatched tungstenite error: {x}" ),
 	}
 }
 

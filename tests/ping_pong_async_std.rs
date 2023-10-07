@@ -14,8 +14,7 @@ use
 	async_std             :: { net::{ TcpListener }                   } ,
 	async_tungstenite     :: { accept_async, async_std::connect_async } ,
 	url                   :: { Url                                    } ,
-
-	log :: { * } ,
+	tracing               :: { *                                      } ,
 };
 
 

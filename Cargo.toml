@@ -12,7 +12,7 @@ rustc_version = "^0.4"
 [dependencies]
 [dependencies.async-tungstenite]
 default-features = false
-version = "^0.23"
+version = "^0.24"
 
 [dependencies.async_io_stream]
 default-features = false
@@ -53,7 +53,7 @@ version = "^0.1"
 
 [dependencies.tungstenite]
 default-features = false
-version = "^0.20"
+version = "^0.21"
 
 [dev-dependencies]
 assert_matches = "^1"
@@ -73,7 +73,7 @@ version = "^1"
 
 [dev-dependencies.async-tungstenite]
 features = ["tokio-runtime", "async-std-runtime"]
-version = "^0.23"
+version = "^0.24"
 
 [dev-dependencies.tokio]
 default-features = false

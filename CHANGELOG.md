@@ -5,6 +5,9 @@
 
   [Unreleased]: https://github.com/najamelan/ws_stream_tungstenite/compare/0.11.0...dev
 
+  - **BREAKING_CHANGE**: update async-tungstenite to 0.24
+  - **BREAKING_CHANGE**: update tungstenite to 0.21
+
 
 ## [0.11.0] - 2023-10-07
 

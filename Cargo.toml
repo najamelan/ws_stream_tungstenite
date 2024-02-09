@@ -58,13 +58,13 @@ version = "^0.21"
 [dev-dependencies]
 assert_matches = "^1"
 async_progress = "^0.2"
-asynchronous-codec = "^0.6"
+asynchronous-codec = "^0.7"
 futures = "^0.3"
 futures-test = "^0.3"
 futures-timer = "^3"
-futures_ringbuf = "^0.3"
+futures_ringbuf = "^0.4"
 pin-utils = "^0.1"
-tracing-log = "^0.1"
+tracing-log = "^0.2"
 url = "^2"
 
 [dev-dependencies.async-std]
@@ -112,7 +112,7 @@ license = "Unlicense"
 name = "ws_stream_tungstenite"
 readme = "README.md"
 repository = "https://github.com/najamelan/ws_stream_tungstenite"
-version = "0.11.0"
+version = "0.12.0"
 
 [package.metadata]
 [package.metadata.docs]

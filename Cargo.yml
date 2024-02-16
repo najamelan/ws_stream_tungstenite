@@ -25,7 +25,7 @@ package:
   # - `git tag x.x.x` with version number.
   # - `git push && git push --tags`
   #
-  version       : 0.12.0
+  version       : 0.13.0
   name          : ws_stream_tungstenite
   edition       : '2021'
   authors       : [ Naja Melan <najamelan@autistici.org> ]
@@ -71,7 +71,7 @@ dependencies:
   futures-util      : { version: ^0.3 , default-features: false                 }
   tungstenite       : { version: ^0.21, default-features: false                 }
   pharos            : { version: ^0.5 , default-features: false                 }
-  async-tungstenite : { version: ^0.24, default-features: false                 }
+  async-tungstenite : { version: ^0.25, default-features: false                 }
   tokio             : { version: ^1   , default-features: false, optional: true }
   tracing           : { version: ^0.1 }
 
@@ -84,7 +84,7 @@ dependencies:
 dev-dependencies:
 
   async-std           : { version: ^1, features: [ attributes ] }
-  async-tungstenite   : { version: ^0.24, features: [ tokio-runtime, async-std-runtime ] }
+  async-tungstenite   : { version: ^0.25, features: [ tokio-runtime, async-std-runtime ] }
   assert_matches      : ^1
   async_progress      : ^0.2
   futures             : ^0.3

@@ -1,9 +1,15 @@
 # ws_stream_tungstenite Changelog
 
-
 ## [Unreleased]
 
-  [Unreleased]: https://github.com/najamelan/ws_stream_tungstenite/compare/0.12.0...dev
+  [Unreleased]: https://github.com/najamelan/ws_stream_tungstenite/compare/0.13.0...dev
+
+
+## [0.13.0] - 2024-02-16
+
+  [0.12.0]: https://github.com/najamelan/ws_stream_tungstenite/compare/0.12.0...0.13.0
+
+  - **BREAKING_CHANGE**: update async-tungstenite to 0.25
 
 
 ## [0.12.0] - 2024-02-09

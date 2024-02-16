@@ -12,7 +12,7 @@ rustc_version = "^0.4"
 [dependencies]
 [dependencies.async-tungstenite]
 default-features = false
-version = "^0.24"
+version = "^0.25"
 
 [dependencies.async_io_stream]
 default-features = false
@@ -73,7 +73,7 @@ version = "^1"
 
 [dev-dependencies.async-tungstenite]
 features = ["tokio-runtime", "async-std-runtime"]
-version = "^0.24"
+version = "^0.25"
 
 [dev-dependencies.tokio]
 default-features = false
@@ -112,7 +112,7 @@ license = "Unlicense"
 name = "ws_stream_tungstenite"
 readme = "README.md"
 repository = "https://github.com/najamelan/ws_stream_tungstenite"
-version = "0.12.0"
+version = "0.13.0"
 
 [package.metadata]
 [package.metadata.docs]

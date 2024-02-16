@@ -25,7 +25,7 @@ package:
   # - `git tag x.x.x` with version number.
   # - `git push && git push --tags`
   #
-  version       : 0.11.0
+  version       : 0.13.0
   name          : ws_stream_tungstenite
   edition       : '2021'
   authors       : [ Naja Melan <najamelan@autistici.org> ]
@@ -69,9 +69,9 @@ dependencies:
   futures-sink      : { version: ^0.3 , default-features: false                 }
   futures-io        : { version: ^0.3 , default-features: false                 }
   futures-util      : { version: ^0.3 , default-features: false                 }
-  tungstenite       : { version: ^0.20, default-features: false                 }
+  tungstenite       : { version: ^0.21, default-features: false                 }
   pharos            : { version: ^0.5 , default-features: false                 }
-  async-tungstenite : { version: ^0.23, default-features: false                 }
+  async-tungstenite : { version: ^0.25, default-features: false                 }
   tokio             : { version: ^1   , default-features: false, optional: true }
   tracing           : { version: ^0.1 }
 
@@ -84,19 +84,19 @@ dependencies:
 dev-dependencies:
 
   async-std           : { version: ^1, features: [ attributes ] }
-  async-tungstenite   : { version: ^0.23, features: [ tokio-runtime, async-std-runtime ] }
+  async-tungstenite   : { version: ^0.25, features: [ tokio-runtime, async-std-runtime ] }
   assert_matches      : ^1
   async_progress      : ^0.2
   futures             : ^0.3
   futures-test        : ^0.3
   futures-timer       : ^3
-  asynchronous-codec  : ^0.6
-  futures_ringbuf     : ^0.3
+  asynchronous-codec  : ^0.7
+  futures_ringbuf     : ^0.4
   # pretty_assertions   : ^0.6
   tokio               : { version: ^1, default-features: false, features: [ net, rt, rt-multi-thread, macros ] }
   tokio-util          : { version: ^0.7, default-features: false, features: [ codec ] }
   tracing-subscriber  : { version: ^0.3, default-features: false, features: [ ansi, env-filter, fmt, json, tracing-log ] }
-  tracing-log         : ^0.1
+  tracing-log         : ^0.2
 
   # tokio-stream        : { version: ^0.1, default-features: false, features: [] }
   url                 : ^2

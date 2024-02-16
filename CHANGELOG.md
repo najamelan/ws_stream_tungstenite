@@ -1,14 +1,28 @@
 # ws_stream_tungstenite Changelog
 
-
 ## [Unreleased]
 
-  [Unreleased]: https://github.com/najamelan/ws_stream_tungstenite/compare/0.11.0...dev
+  [Unreleased]: https://github.com/najamelan/ws_stream_tungstenite/compare/0.13.0...dev
 
 
-## [0.11.0 - 2023-10-07]
+## [0.13.0] - 2024-02-16
 
-  [0.11.0]: https://github.com/najamelan/ws_stream_tungstenite/compare/0.9.0...0.10.0
+  [0.12.0]: https://github.com/najamelan/ws_stream_tungstenite/compare/0.12.0...0.13.0
+
+  - **BREAKING_CHANGE**: update async-tungstenite to 0.25
+
+
+## [0.12.0] - 2024-02-09
+
+  [0.12.0]: https://github.com/najamelan/ws_stream_tungstenite/compare/0.11.0...0.12.0
+
+  - **BREAKING_CHANGE**: update async-tungstenite to 0.24
+  - **BREAKING_CHANGE**: update tungstenite to 0.21
+
+
+## [0.11.0] - 2023-10-07
+
+  [0.11.0]: https://github.com/najamelan/ws_stream_tungstenite/compare/0.10.0...0.11.0
   
   - **BREAKING_CHANGE**/**SECURITY UPDATE**: update tungstenite to 0.20.1. 
     See: [RUSTSEC-2023-0065](https://rustsec.org/advisories/RUSTSEC-2023-0065).

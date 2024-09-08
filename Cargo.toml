@@ -72,7 +72,7 @@ features = ["attributes"]
 version = "^1"
 
 [dev-dependencies.async-tungstenite]
-features = ["tokio-runtime", "async-std-runtime"]
+features = ["tokio-runtime", "async-std-runtime", "url"]
 version = "^0.28"
 
 [dev-dependencies.tokio]
@@ -89,10 +89,6 @@ version = "^0.7"
 default-features = false
 features = ["ansi", "env-filter", "fmt", "json", "tracing-log"]
 version = "^0.3"
-
-[dev-dependencies.tungstenite]
-features = ["url"]
-version = "^0.24"
 
 [[example]]
 name = "tokio_codec"
@@ -116,7 +112,7 @@ license = "Unlicense"
 name = "ws_stream_tungstenite"
 readme = "README.md"
 repository = "https://github.com/najamelan/ws_stream_tungstenite"
-version = "0.13.0"
+version = "0.14.0"
 
 [package.metadata]
 [package.metadata.docs]

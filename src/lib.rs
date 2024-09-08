@@ -1,10 +1,10 @@
 #![ cfg_attr( nightly, feature(doc_cfg) ) ]
 #![ doc = include_str!("../README.md") ]
 
-#![ doc    ( html_root_url = "https://docs.rs/ws_stream_tungstenite" ) ]
-#![ deny   ( missing_docs                                            ) ]
-#![ forbid ( unsafe_code                                             ) ]
-#![ allow  ( clippy::suspicious_else_formatting                      ) ]
+#![ doc    ( html_root_url = "https://docs.rs/ws_stream_tungstenite"                  ) ]
+#![ deny   ( missing_docs                                                             ) ]
+#![ forbid ( unsafe_code                                                              ) ]
+#![ allow  ( clippy::suspicious_else_formatting, clippy::too_long_first_doc_paragraph ) ]
 
 #![ warn
 (

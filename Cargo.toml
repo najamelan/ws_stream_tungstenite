@@ -12,7 +12,7 @@ rustc_version = "^0.4"
 [dependencies]
 [dependencies.async-tungstenite]
 default-features = false
-version = "^0.25"
+version = "^0.28"
 
 [dependencies.async_io_stream]
 default-features = false
@@ -53,7 +53,7 @@ version = "^0.1"
 
 [dependencies.tungstenite]
 default-features = false
-version = "^0.21"
+version = "^0.24"
 
 [dev-dependencies]
 assert_matches = "^1"
@@ -73,7 +73,7 @@ version = "^1"
 
 [dev-dependencies.async-tungstenite]
 features = ["tokio-runtime", "async-std-runtime"]
-version = "^0.25"
+version = "^0.28"
 
 [dev-dependencies.tokio]
 default-features = false
@@ -89,6 +89,10 @@ version = "^0.7"
 default-features = false
 features = ["ansi", "env-filter", "fmt", "json", "tracing-log"]
 version = "^0.3"
+
+[dev-dependencies.tungstenite]
+features = ["url"]
+version = "^0.24"
 
 [[example]]
 name = "tokio_codec"

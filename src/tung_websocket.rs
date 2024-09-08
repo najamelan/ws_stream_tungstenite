@@ -309,7 +309,7 @@ impl<S: Unpin> Stream for TungWebSocket<S> where S: AsyncRead + AsyncWrite + Sen
 					{
 						self.state.insert( State::STREAM_CLOSED );
 
-						self.queue_event( WsEvent::Error(Arc::new( WsErr::from( std::io::Error::from(e.kind()) ) )) );
+						self.queue_event( WsEvent::Error(Arc::new( WsErr::from( io::Error::from(e.kind()) ) )) );
 
 						Some(Err(e)).into()
 					}

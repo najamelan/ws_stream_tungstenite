@@ -1,0 +1,17 @@
+package:
+  name: ws_stream_tungstenite_ssl
+  version: 0.1.0
+  edition: "2021"
+
+dependencies:
+  async-std            : { version: ^1, features: [ attributes ] }
+  async-tungstenite    : { version: ^0.28, features: [ tokio-runtime, async-std-runtime, url ] }
+  futures              : ^0.3
+  pin-utils            : ^0.1
+  rustls-pemfile       : ^2
+  tokio                : { version: ^1, default-features: false, features: [ net, rt, rt-multi-thread, macros ] }
+  tokio-rustls         : ^0.26
+  rustls               : ^0.23
+  tracing              : { version: ^0.1 }
+  url                  : ^2
+  ws_stream_tungstenite: { path: ../../ }

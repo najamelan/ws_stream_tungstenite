@@ -33,7 +33,7 @@ use crate::{ import::*, tung_websocket::TungWebSocket, WsEvent, WsErr };
 /// On writing, eg. `AsyncWrite::*` all errors are fatal.
 ///
 /// When a Protocol error is encountered during writing, it indicates that either _ws_stream_tungstenite_ or _tungstenite_ have
-/// a bug so it will panic.
+/// a bug.
 //
 pub struct WsStream<S> where S: AsyncRead + AsyncWrite + Send + Unpin
 {
@@ -219,10 +219,6 @@ impl<S> Observable< WsEvent > for WsStream<S> where S: AsyncRead + AsyncWrite + 
 
 	fn observe( &mut self, options: ObserveConfig< WsEvent > ) -> Observe< '_, WsEvent, Self::Error >
 	{
-		async move
-		{
-			self.inner.observe( options ).await.map_err( Into::into )
-
-		}.boxed()
+		self.inner.observe( options )
 	}
 }

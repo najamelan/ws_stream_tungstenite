@@ -20,7 +20,7 @@ package:
   # - push dev and verify CI result
   # - `cargo test` on dependent crates
   #
-  # - cargo publish
+  # - `cargo publish`
   # - `git checkout master && git merge dev --no-ff`
   # - `git tag x.x.x` with version number.
   # - `git push && git push --tags`

@@ -16,7 +16,9 @@ There are currently 2 versions of the AsyncRead/Write traits. The _futures-rs_ v
 You might wonder, why not just serialize your struct and send it in websocket messages. First of all, on wasm there wasn't a convenient websocket rust crate before I released _ws_stream_wasm_, even without `AsyncRead`/`AsyncWrite`. Next, this allows you to keep your code generic by just taking `AsyncRead`/`AsyncWrite` instead of adapting it to a specific protocol like websockets, which is especially useful in library crates. Furthermore you don't need to deal with the quirks of a websocket protocol and library. This just works almost like any other async byte stream (exception: [closing the connection](#how-to-close-a-connection)). There is a little bit of extra overhead due to this indirection, but it should be small.
 
 _ws_stream_tungstenite_ works on top of _async-tungstenite_, so you will have to use the API from _async-tungstenite_ to setup your
-connection and pass the [`WebSocketStream`](async_tungstenite::WebSocketStream) to [`WsStream`].
+connection and pass the [`WebSocketStream`](async_tungstenite::WebSocketStream) to [`WsStream`]. You will need to turn on either the
+`tokio-runtime` or the `async-std-runtime` feature on _async-tungstenite_ or you will get a compilation error in _ws_stream_tungstenite_
+because of a missing `Sink` implementation on the underlying stream.
 
 
 ## Table of Contents

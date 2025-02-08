@@ -99,9 +99,15 @@ impl Notifier
 
 						Ok(()) =>
 						{
-							// note we can only get here if the queue isn't empty, so unwrap
+							// note we can only get here if the queue isn't empty, shouldn't happen
 							//
-							if let Err(_e) = pharos.as_mut().start_send( self.events.pop_front().expect( "pop queued event." ) )
+							let event = match self.events.pop_front()
+							{
+								Some(e) => e,
+								None => return Poll::Ready(Err(())),
+							};
+
+							if let Err(_e) = pharos.as_mut().start_send( event )
 							{
 								self.state = State::Closed;
 

@@ -9,7 +9,7 @@
 use
 {
 	ws_stream_tungstenite :: { *                                      } ,
-	futures               :: { StreamExt, SinkExt, future::join       } ,
+	futures               :: { StreamExt, future::join                } ,
 	asynchronous_codec    :: { LinesCodec, Framed                     } ,
 	async_std             :: { net::{ TcpListener }                   } ,
 	async_tungstenite     :: { accept_async, async_std::connect_async } ,

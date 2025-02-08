@@ -76,7 +76,7 @@ mod import
 		futures_ringbuf   :: { Endpoint                               } ,
 		futures           :: { future::{ join }                       } ,
 		tungstenite       :: { protocol::{ Role }                     } ,
-		tracing           :: { *                                      } ,
+		tracing           :: { info, trace                            } ,
 	};
 }
 

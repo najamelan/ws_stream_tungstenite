@@ -3,7 +3,7 @@
 use
 {
 	ws_stream_tungstenite :: { *                                                    } ,
-	futures               :: { StreamExt, SinkExt, future::join                     } ,
+	futures               :: { StreamExt, future::join                              } ,
 	asynchronous_codec    :: { LinesCodec, Framed                                   } ,
 	tokio                 :: { net::{ TcpListener }                                 } ,
 	async_tungstenite     :: { accept_async, tokio::{ connect_async, TokioAdapter } } ,

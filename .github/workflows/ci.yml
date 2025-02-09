@@ -81,6 +81,6 @@ jobs:
         uses: codecov/codecov-action@v1.5.2
 
       - name: Run cargo-deny
-        uses: EmbarkStudios/cargo-deny-action@v1
+        uses: EmbarkStudios/cargo-deny-action@v2
 
 

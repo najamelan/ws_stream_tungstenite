@@ -65,13 +65,10 @@ jobs:
       - name: Build documentation
         run : bash ci/doc.bash
 
-
-      - name: Install cargo-tarpaulin binary crate
-        uses: actions-rs/install@v0.1
+      - name: Install cargo-tarpaulin
+        uses: brndnmtthws/rust-action-cargo-binstall@v1.1.0
         with:
-          crate: cargo-tarpaulin
-          version: latest
-          use-tool-cache: true
+          packages: cargo-tarpaulin
 
       - name: Run cargo-tarpaulin
         run : |

@@ -50,14 +50,14 @@ With [cargo yaml](https://gitlab.com/storedbox/cargo-yaml):
 ```yaml
 dependencies:
 
-  ws_stream_tungstenite: ^0.14
+  ws_stream_tungstenite: ^0.15
 ```
 
 With raw Cargo.toml
 ```toml
 [dependencies]
 
-   ws_stream_tungstenite = "0.14"
+   ws_stream_tungstenite = "0.15"
 ```
 
 ### Upgrade

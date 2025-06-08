@@ -21,7 +21,7 @@ async fn main()
 	let addr: SocketAddr = env::args().nth(1).unwrap_or_else( || "127.0.0.1:3212".to_string() ).parse().unwrap();
 	let socket = TcpListener::bind( addr ).await.unwrap();
 
-	println!( "Listening on: {}", addr );
+	println!( "Listening on: {addr}" );
 
 
 	loop
@@ -64,7 +64,7 @@ async fn handle_conn( conn: Result< (TcpStream, SocketAddr), std::io::Error > )
 
 	let (sink, stream) = ttung.split();
 
-	println!( "New WebSocket connection: {}", peer_addr );
+	println!( "New WebSocket connection: {peer_addr}" );
 
 
 	match stream.forward( sink ).await

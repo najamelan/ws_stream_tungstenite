@@ -55,8 +55,8 @@ impl std::error::Error for WsErr
 	{
 		match &self
 		{
-			WsErr::Tungstenite{ ref source } => Some(source),
-			WsErr::Io         { ref source } => Some(source),
+			WsErr::Tungstenite{ source } => Some(source),
+			WsErr::Io         { source } => Some(source),
 
 			WsErr::Protocol     |
 			WsErr::ReceivedText |

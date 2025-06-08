@@ -27,7 +27,7 @@ package:
   #
   version       : 0.15.0
   name          : ws_stream_tungstenite
-  edition       : '2021'
+  edition       : '2024'
   authors       : [ Naja Melan <najamelan@autistici.org> ]
   description   : Provide AsyncRead/AsyncWrite over Tungstenite WebSockets
   license       : Unlicense

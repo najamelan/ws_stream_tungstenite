@@ -44,12 +44,12 @@ async fn ping_pong_async_std()
 		let url             = Url::parse( "ws://127.0.0.1:3015" ).unwrap();
 		let (mut socket, _) = connect_async( url ).await.expect( "ws handshake" );
 
-		socket.send( tungstenite::Message::Ping( vec![1, 2, 3] ) ).await.expect( "send ping" );
+		socket.send( tungstenite::Message::Ping( vec![1, 2, 3].into() ) ).await.expect( "send ping" );
 
 		socket.close( None ).await.expect( "close client end" );
 
-		assert_eq!( Some( tungstenite::Message::Pong( vec![1, 2, 3] ) ), socket.next().await.transpose().expect( "pong"  ) );
-		assert_eq!( Some( tungstenite::Message::Close(None)           ), socket.next().await.transpose().expect( "close" ) );
+		assert_eq!( Some( tungstenite::Message::Pong( vec![1, 2, 3].into() ) ), socket.next().await.transpose().expect( "pong"  ) );
+		assert_eq!( Some( tungstenite::Message::Close(None) ), socket.next().await.transpose().expect( "close" ) );
 
 		trace!( "drop websocket" );
 	};

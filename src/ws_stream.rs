@@ -1,7 +1,7 @@
 use crate::{ import::*, tung_websocket::TungWebSocket, WsEvent, WsErr };
 
 
-/// Takes a [`WebSocketStream`](async_tungstenite::WebSocketStream) and implements futures 0.3 `AsyncRead`/`AsyncWrite`/`AsyncBufRead`.
+/// Takes a [`WebSocketStream`](async_tungstenite::WebSocketStream) and implements futures `AsyncRead`/`AsyncWrite`/`AsyncBufRead`.
 ///
 /// Will always create an entire Websocket message from every write. Tungstenite buffers messages up to
 /// `write_buffer_size` in their [`tungstenite::protocol::WebSocketConfig`]. If you want small messages to be sent out,
@@ -37,7 +37,7 @@ use crate::{ import::*, tung_websocket::TungWebSocket, WsEvent, WsErr };
 //
 pub struct WsStream<S> where S: AsyncRead + AsyncWrite + Send + Unpin
 {
-	inner: IoStream< TungWebSocket<S>, Vec<u8> >,
+	inner: IoStream< TungWebSocket<S>, Bytes >,
 	buffer_size: usize,
 }
 

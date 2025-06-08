@@ -68,10 +68,8 @@ async fn server
 	sc        : Endpoint       ,
 )
 {
-	let conf = WebSocketConfig{
-		write_buffer_size: 0,
-		..Default::default()
-	};
+	let mut conf = WebSocketConfig::default();
+	conf.write_buffer_size = 0;
 
 	let     tws    = WebSocketStream::from_raw_socket( sc, Role::Server, Some(conf) ).await;
 	let mut ws     = WsStream::new( tws );
@@ -141,16 +139,14 @@ async fn client
 	cs          : Endpoint       ,
 )
 {
-	let conf = WebSocketConfig{
-		write_buffer_size: 0,
-		..Default::default()
-	};
+	let mut conf = WebSocketConfig::default();
+	conf.write_buffer_size = 0;
 
 	let (mut sink, mut stream) = WebSocketStream::from_raw_socket( cs, Role::Client, Some(conf) ).await.split();
 
 	info!( "wait for send_text" );
 	send_text.await;
-	sink.send( tungstenite::Message::Text( "Text from client".to_string() ) ).await.expect( "send text" );
+	sink.send( tungstenite::Message::Text( "Text from client".into() ) ).await.expect( "send text" );
 
 	steps.set_state( Step::ReadText ).await;
 

@@ -76,11 +76,11 @@ impl fmt::Display for WsErr
 		{
 			WsErr::Tungstenite{ source } =>
 
-				write!( f, "A tungstenite error happened: {}", source ),
+				write!( f, "A tungstenite error happened: {source}" ),
 
 			WsErr::Io{ source } =>
 
-				write!( f, "An io error happened: {}", source ),
+				write!( f, "An io error happened: {source}" ),
 
 			WsErr::Protocol =>
 

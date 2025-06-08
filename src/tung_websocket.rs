@@ -110,7 +110,7 @@ impl<S> TungWebSocket<S> where S: AsyncRead + AsyncWrite + Send + Unpin
 	// Will return pending until the entire sending operation is finished. We still need to poll
 	// the stream to drive the handshake to completion.
 	//
-	fn send_closeframe( &mut self, code: CloseCode, reason: Cow<'static, str>, cx: &mut Context<'_> ) -> Poll<()>
+	fn send_closeframe( &mut self, code: CloseCode, reason: Utf8Bytes, cx: &mut Context<'_> ) -> Poll<()>
 	{
 		// If the sink is already closed, don't try to send any more close frames.
 		//
@@ -160,7 +160,7 @@ impl<S> TungWebSocket<S> where S: AsyncRead + AsyncWrite + Send + Unpin
 
 impl<S: Unpin> Stream for TungWebSocket<S> where S: AsyncRead + AsyncWrite + Send
 {
-	type Item = Result<Vec<u8>, io::Error>;
+	type Item = Result<Bytes, io::Error>;
 
 
 	/// Get the next websocket message and convert it to a Vec<u8>.
@@ -223,7 +223,7 @@ impl<S: Unpin> Stream for TungWebSocket<S> where S: AsyncRead + AsyncWrite + Sen
 			{
 				match msg
 				{
-					TungMessage::Binary(vec) => Some(Ok( vec )).into(),
+					TungMessage::Binary(bytes) => Some(Ok( bytes )).into(),
 
 
 					TungMessage::Text(_) =>
@@ -394,7 +394,7 @@ impl<S: Unpin> Stream for TungWebSocket<S> where S: AsyncRead + AsyncWrite + Sen
 
 
 
-impl<S> Sink<Vec<u8>> for TungWebSocket<S> where S: AsyncRead + AsyncWrite + Send + Unpin
+impl<S> Sink<Bytes> for TungWebSocket<S> where S: AsyncRead + AsyncWrite + Send + Unpin
 {
 	type Error = io::Error;
 
@@ -444,7 +444,7 @@ impl<S> Sink<Vec<u8>> for TungWebSocket<S> where S: AsyncRead + AsyncWrite + Sen
 	/// - other std::io::Error's generally mean something went wrong on the underlying transport. Consider these fatal
 	///   and just drop the connection as soon as `poll_next` returns None.
 	//
-	fn start_send( mut self: Pin<&mut Self>, item: Vec<u8> ) -> Result<(), Self::Error>
+	fn start_send( mut self: Pin<&mut Self>, item: Bytes ) -> Result<(), Self::Error>
 	{
 		if self.state.contains( State::SINK_CLOSED )
 		{
@@ -452,7 +452,7 @@ impl<S> Sink<Vec<u8>> for TungWebSocket<S> where S: AsyncRead + AsyncWrite + Sen
 		}
 
 
-		Pin::new( &mut self.inner ).start_send( item.into() ).map_err( |e|
+		Pin::new( &mut self.inner ).start_send( TungMessage::Binary(item) ).map_err( |e|
 		{
 			// TODO: It's not quite clear whether the stream can remain functional when we get a sink error,
 			// but since this is a duplex connection, and poll_next also tries to send out close frames

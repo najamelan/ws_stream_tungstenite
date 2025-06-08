@@ -9,7 +9,7 @@ use
 	futures               :: { StreamExt, SinkExt, executor::block_on, future::join                               } ,
 	asynchronous_codec    :: { LinesCodec, Framed                                                                 } ,
 	async_tungstenite     :: { WebSocketStream                                                                    } ,
-	tungstenite           :: { protocol::{ WebSocketConfig, CloseFrame, frame::coding::CloseCode, Role }, Message } ,
+	tungstenite           :: { Bytes, protocol::{ WebSocketConfig, CloseFrame, frame::coding::CloseCode, Role }, Message } ,
 	pharos                :: { Observable, ObserveConfig                                                          } ,
 	assert_matches        :: { assert_matches                                                                     } ,
 	async_progress        :: { Progress                                                                           } ,
@@ -39,15 +39,13 @@ fn buffer_size()
 
 async fn server( sc: Endpoint )
 {
-	let conf = WebSocketConfig
-	{
-		write_buffer_size: 6,
-		max_write_buffer_size: 8,
-		..Default::default()
-	};
+	let mut conf = WebSocketConfig::default();
+
+	conf.write_buffer_size = 6;
+	conf.max_write_buffer_size = 8;
 
 	let mut tws = WebSocketStream::from_raw_socket( sc, Role::Server, Some(conf) ).await;
-	let msg = Message::Binary(Vec::from("hello".as_bytes()));
+	let msg = Message::Binary(Bytes::from("hello".as_bytes()));
 
 	let writer = async
 	{

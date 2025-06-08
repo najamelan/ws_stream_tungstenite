@@ -40,18 +40,19 @@ mod import
 {
 	pub(crate) use
 	{
-		bitflags          :: { bitflags                                                                                     } ,
-		futures_core      :: { ready, Stream                                                                                } ,
-		futures_sink      :: { Sink                                                                                         } ,
-		futures_io        :: { AsyncRead, AsyncWrite, AsyncBufRead                                                          } ,
-		futures_util      :: { FutureExt                                                                                    } ,
-		tracing           :: { error                                                                                        } ,
-		std               :: { io, io::{ IoSlice, IoSliceMut }, pin::Pin, fmt, borrow::Cow                                  } ,
-		std               :: { collections::VecDeque, sync::Arc, task::{ Context, Poll }                                    } ,
-		async_tungstenite :: { WebSocketStream as ATungSocket                                                               } ,
-		tungstenite       :: { Message as TungMessage, Error as TungErr, protocol::{ CloseFrame, frame::coding::CloseCode } } ,
-		pharos            :: { Observable, ObserveConfig, Observe, Pharos, PharErr                                          } ,
-		async_io_stream   :: { IoStream                                                                                     } ,
+		bitflags          :: { bitflags                                                    } ,
+		futures_core      :: { ready, Stream                                               } ,
+		futures_sink      :: { Sink                                                        } ,
+		futures_io        :: { AsyncRead, AsyncWrite, AsyncBufRead                         } ,
+		futures_util      :: { FutureExt                                                   } ,
+		tracing           :: { error                                                       } ,
+		std               :: { io, io::{ IoSlice, IoSliceMut }, pin::Pin, fmt              } ,
+		std               :: { collections::VecDeque, sync::Arc, task::{ Context, Poll }   } ,
+		async_tungstenite :: { WebSocketStream as ATungSocket                              } ,
+		tungstenite       :: { Bytes, Message as TungMessage, Error as TungErr, Utf8Bytes  } ,
+		tungstenite       :: { protocol::{ CloseFrame, frame::coding::CloseCode }          } ,
+		pharos            :: { Observable, ObserveConfig, Observe, Pharos, PharErr         } ,
+		async_io_stream   :: { IoStream                                                    } ,
 	};
 
 

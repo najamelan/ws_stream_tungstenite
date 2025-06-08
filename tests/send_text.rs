@@ -50,7 +50,7 @@ async fn send_text()
 		let url             = Url::parse( "ws://127.0.0.1:3017" ).unwrap();
 		let (mut socket, _) = connect_async( url ).await.expect( "ws handshake" );
 
-		socket.send( tungstenite::Message::Text( "Hi".to_string() ) ).await.expect( "send text" );
+		socket.send( tungstenite::Message::Text( "Hi".into() ) ).await.expect( "send text" );
 
 		socket.close( None ).await.expect( "close client end" );
 

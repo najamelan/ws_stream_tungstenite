@@ -218,7 +218,7 @@ mod tests
 			assert_eq!( State::Ready, not.state );
 
 
-		not.queue( WsEvent::Ping( vec![ 1, 2, 3] ) );
+		not.queue( WsEvent::Ping( vec![ 1, 2, 3].into() ) );
 
 			assert_eq!( State::Pending, not.state );
 
@@ -253,8 +253,8 @@ mod tests
 
 		// Queue 2 so the channel gives back pressure.
 		//
-		not.queue( WsEvent::Ping( vec![ 1, 2, 3] ) );
-		not.queue( WsEvent::Ping( vec![ 1, 2, 3] ) );
+		not.queue( WsEvent::Ping( vec![ 1, 2, 3].into() ) );
+		not.queue( WsEvent::Ping( vec![ 1, 2, 3].into() ) );
 
 			assert_eq!( State::Pending, not.state        );
 			assert_eq!(              2, not.events.len() );
@@ -306,7 +306,7 @@ mod tests
 			assert_eq!( 0, not.events.len() );
 
 
-		not.queue( WsEvent::Ping( vec![ 1, 2, 3] ) );
+		not.queue( WsEvent::Ping( vec![ 1, 2, 3].into() ) );
 
 			assert_eq!( 1, not.events.len() );
 

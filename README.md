@@ -11,6 +11,8 @@
 This crate provides `AsyncRead`/`AsyncWrite`/`AsyncBufRead` over _async-tungstenite_ websockets. It mainly enables working with rust wasm code and communicating over a framed stream of bytes. This crate provides the functionality for non-WASM targets (eg. server side).
 There is a WASM version [available here](https://crates.io/crates/ws_stream_wasm) for the client side.
 
+NOTE: _async_tungstenite_ now implements `AsyncRead`/`AsyncWrite` through [ByteReader/ByteWriter](https://docs.rs/async-tungstenite/latest/async_tungstenite/bytes/index.html). If this proves to be satisfactory (still have to test), I may deprecate _ws_stream_tungstenite_.
+
 There are currently 2 versions of the AsyncRead/Write traits. The _futures-rs_ version and the _tokio_ version. You need to enable the features `tokio_io` if you want the _tokio_ version of the traits implemented.
 
 You might wonder, why not just serialize your struct and send it in websocket messages. First of all, on wasm there wasn't a convenient websocket rust crate before I released _ws_stream_wasm_, even without `AsyncRead`/`AsyncWrite`. Next, this allows you to keep your code generic by just taking `AsyncRead`/`AsyncWrite` instead of adapting it to a specific protocol like websockets, which is especially useful in library crates. Furthermore you don't need to deal with the quirks of a websocket protocol and library. This just works almost like any other async byte stream (exception: [closing the connection](#how-to-close-a-connection)). There is a little bit of extra overhead due to this indirection, but it should be small.

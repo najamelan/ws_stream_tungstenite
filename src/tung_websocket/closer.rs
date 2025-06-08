@@ -27,7 +27,7 @@ enum State
 	// is not ready to receive more data, store it here for now and try again to do this first on each
 	// read or write from the user.
 	//
-	Closing(CloseFrame<'static>),
+	Closing(CloseFrame),
 
 	// When we are closing, and the sink says yes to poll_ready, but it says Pending to flush, we store that
 	// fact, so we will continue trying to flush on subsequent operations.
@@ -71,7 +71,7 @@ impl Closer
 
 
 
-	pub(super) fn queue( &mut self, frame: CloseFrame<'static> ) -> Result<(), ()>
+	pub(super) fn queue( &mut self, frame: CloseFrame ) -> Result<(), ()>
 	{
 		if self.state != State::Ready
 		{

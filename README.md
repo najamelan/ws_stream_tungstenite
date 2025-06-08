@@ -11,12 +11,16 @@
 This crate provides `AsyncRead`/`AsyncWrite`/`AsyncBufRead` over _async-tungstenite_ websockets. It mainly enables working with rust wasm code and communicating over a framed stream of bytes. This crate provides the functionality for non-WASM targets (eg. server side).
 There is a WASM version [available here](https://crates.io/crates/ws_stream_wasm) for the client side.
 
+NOTE: _async_tungstenite_ now implements `AsyncRead`/`AsyncWrite` through [ByteReader/ByteWriter](https://docs.rs/async-tungstenite/latest/async_tungstenite/bytes/index.html). If this proves to be satisfactory (still have to test), I may deprecate _ws_stream_tungstenite_.
+
 There are currently 2 versions of the AsyncRead/Write traits. The _futures-rs_ version and the _tokio_ version. You need to enable the features `tokio_io` if you want the _tokio_ version of the traits implemented.
 
 You might wonder, why not just serialize your struct and send it in websocket messages. First of all, on wasm there wasn't a convenient websocket rust crate before I released _ws_stream_wasm_, even without `AsyncRead`/`AsyncWrite`. Next, this allows you to keep your code generic by just taking `AsyncRead`/`AsyncWrite` instead of adapting it to a specific protocol like websockets, which is especially useful in library crates. Furthermore you don't need to deal with the quirks of a websocket protocol and library. This just works almost like any other async byte stream (exception: [closing the connection](#how-to-close-a-connection)). There is a little bit of extra overhead due to this indirection, but it should be small.
 
 _ws_stream_tungstenite_ works on top of _async-tungstenite_, so you will have to use the API from _async-tungstenite_ to setup your
-connection and pass the [`WebSocketStream`](async_tungstenite::WebSocketStream) to [`WsStream`].
+connection and pass the [`WebSocketStream`](async_tungstenite::WebSocketStream) to [`WsStream`]. You will need to turn on either the
+`tokio-runtime` or the `async-std-runtime` feature on _async-tungstenite_ or you will get a compilation error in _ws_stream_tungstenite_
+because of a missing `Sink` implementation on the underlying stream.
 
 
 ## Table of Contents
@@ -46,14 +50,14 @@ With [cargo yaml](https://gitlab.com/storedbox/cargo-yaml):
 ```yaml
 dependencies:
 
-  ws_stream_tungstenite: ^0.14
+  ws_stream_tungstenite: ^0.15
 ```
 
 With raw Cargo.toml
 ```toml
 [dependencies]
 
-   ws_stream_tungstenite = "0.14"
+   ws_stream_tungstenite = "0.15"
 ```
 
 ### Upgrade

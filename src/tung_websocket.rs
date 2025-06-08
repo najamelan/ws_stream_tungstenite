@@ -110,7 +110,7 @@ impl<S> TungWebSocket<S> where S: AsyncRead + AsyncWrite + Send + Unpin
 	// Will return pending until the entire sending operation is finished. We still need to poll
 	// the stream to drive the handshake to completion.
 	//
-	fn send_closeframe( &mut self, code: CloseCode, reason: Cow<'static, str>, cx: &mut Context<'_> ) -> Poll<()>
+	fn send_closeframe( &mut self, code: CloseCode, reason: Utf8Bytes, cx: &mut Context<'_> ) -> Poll<()>
 	{
 		// If the sink is already closed, don't try to send any more close frames.
 		//
@@ -121,9 +121,9 @@ impl<S> TungWebSocket<S> where S: AsyncRead + AsyncWrite + Send + Unpin
 			self.state.insert( State::SINK_CLOSED );
 			self.state.insert( State::CLOSER_PEND );
 
-			self.closer.queue( CloseFrame{ code, reason } )
+			let _ = self.closer.queue( CloseFrame{ code, reason } )
 
-				.expect( "ws_stream_tungstenite should not queue 2 close frames" )
+				.map_err( |_| { error!("ws_stream_tungstenite should not queue 2 close frames."); } )
 			;
 		}
 
@@ -160,7 +160,7 @@ impl<S> TungWebSocket<S> where S: AsyncRead + AsyncWrite + Send + Unpin
 
 impl<S: Unpin> Stream for TungWebSocket<S> where S: AsyncRead + AsyncWrite + Send
 {
-	type Item = Result<Vec<u8>, io::Error>;
+	type Item = Result<Bytes, io::Error>;
 
 
 	/// Get the next websocket message and convert it to a Vec<u8>.
@@ -223,7 +223,7 @@ impl<S: Unpin> Stream for TungWebSocket<S> where S: AsyncRead + AsyncWrite + Sen
 			{
 				match msg
 				{
-					TungMessage::Binary(vec) => Some(Ok( vec )).into(),
+					TungMessage::Binary(bytes) => Some(Ok( bytes )).into(),
 
 
 					TungMessage::Text(_) =>
@@ -271,7 +271,8 @@ impl<S: Unpin> Stream for TungWebSocket<S> where S: AsyncRead + AsyncWrite + Sen
 
 					TungMessage::Frame(_) =>
 					{
-						unreachable!( "A Message::Frame(..) should be never occur from a read" );
+						error!( "A Message::Frame(..) should be never occur from a read" );
+						Poll::Ready(Some(Err(io::ErrorKind::Other.into())))
 					}
 				}
 			}
@@ -282,7 +283,7 @@ impl<S: Unpin> Stream for TungWebSocket<S> where S: AsyncRead + AsyncWrite + Sen
 			{
 				// See the wildcard at the bottom for why we need this.
 				//
-				#[ allow( unreachable_patterns, clippy::wildcard_in_or_patterns )]
+				#[ allow( clippy::wildcard_in_or_patterns )]
 				//
 				match err
 				{
@@ -297,7 +298,6 @@ impl<S: Unpin> Stream for TungWebSocket<S> where S: AsyncRead + AsyncWrite + Sen
 						self.state.insert( State::STREAM_CLOSED );
 
 						self.queue_event( WsEvent::Closed );
-
 						self.poll_next( cx )
 					}
 
@@ -308,7 +308,6 @@ impl<S: Unpin> Stream for TungWebSocket<S> where S: AsyncRead + AsyncWrite + Sen
 					TungErr::Io(e) =>
 					{
 						self.state.insert( State::STREAM_CLOSED );
-
 						self.queue_event( WsEvent::Error(Arc::new( WsErr::from( io::Error::from(e.kind()) ) )) );
 
 						Some(Err(e)).into()
@@ -383,7 +382,10 @@ impl<S: Unpin> Stream for TungWebSocket<S> where S: AsyncRead + AsyncWrite + Sen
 					// a feature is enabled on a dependency, we have to go for wildcard here.
 					// As of tungstenite 0.19 Http and HttpFormat are also behind a feature flag.
 					//
-					_ => unreachable!( "{:?}", err ),
+					_ => {
+						error!( "{:?}", err );
+						Poll::Ready(Some(Err(io::ErrorKind::Other.into())))
+					}
 				}
 			}
 		}
@@ -392,7 +394,7 @@ impl<S: Unpin> Stream for TungWebSocket<S> where S: AsyncRead + AsyncWrite + Sen
 
 
 
-impl<S> Sink<Vec<u8>> for TungWebSocket<S> where S: AsyncRead + AsyncWrite + Send + Unpin
+impl<S> Sink<Bytes> for TungWebSocket<S> where S: AsyncRead + AsyncWrite + Send + Unpin
 {
 	type Error = io::Error;
 
@@ -442,7 +444,7 @@ impl<S> Sink<Vec<u8>> for TungWebSocket<S> where S: AsyncRead + AsyncWrite + Sen
 	/// - other std::io::Error's generally mean something went wrong on the underlying transport. Consider these fatal
 	///   and just drop the connection as soon as `poll_next` returns None.
 	//
-	fn start_send( mut self: Pin<&mut Self>, item: Vec<u8> ) -> Result<(), Self::Error>
+	fn start_send( mut self: Pin<&mut Self>, item: Bytes ) -> Result<(), Self::Error>
 	{
 		if self.state.contains( State::SINK_CLOSED )
 		{
@@ -450,7 +452,7 @@ impl<S> Sink<Vec<u8>> for TungWebSocket<S> where S: AsyncRead + AsyncWrite + Sen
 		}
 
 
-		Pin::new( &mut self.inner ).start_send( item.into() ).map_err( |e|
+		Pin::new( &mut self.inner ).start_send( TungMessage::Binary(item) ).map_err( |e|
 		{
 			// TODO: It's not quite clear whether the stream can remain functional when we get a sink error,
 			// but since this is a duplex connection, and poll_next also tries to send out close frames
@@ -511,7 +513,7 @@ fn to_io_error( err: TungErr ) -> io::Error
 {
 	// See the wildcard at the bottom for why we need this.
 	//
-	#[ allow( unreachable_patterns, clippy::wildcard_in_or_patterns )]
+	#[ allow( clippy::wildcard_in_or_patterns )]
 	//
 	match err
 	{
@@ -537,7 +539,8 @@ fn to_io_error( err: TungErr ) -> io::Error
 		//
 		TungErr::Protocol(source) =>
 		{
-			unreachable!( "protocol error from tungstenite on send is a bug in ws_stream_tungstenite, please report at http://github.com/najamelan/ws_stream_tungstenite/issues. The error from tungstenite is {}", source );
+			error!( "protocol error from tungstenite on send is a bug in ws_stream_tungstenite, please report at http://github.com/najamelan/ws_stream_tungstenite/issues. Especially if you find a way to reproduce it. The error from tungstenite is {}", source );
+			io::ErrorKind::Other.into()
 		}
 
 
@@ -550,22 +553,34 @@ fn to_io_error( err: TungErr ) -> io::Error
 		// However `WsStream` looks at the size of this buffer and only sends up to `max_write_buffer_len`
 		// bytes in one message.
 		//
-		TungErr::WriteBufferFull(_) => unreachable!( "TungErr::WriteBufferFull" ),
+		TungErr::WriteBufferFull(_) => {
+			error!( "TungErr::WriteBufferFull" );
+			io::ErrorKind::Other.into()
+		}
 
 		// These are handshake errors
 		//
-		TungErr::Url(_) => unreachable!( "TungErr::Url" ),
+		TungErr::Url(_) => {
+			error!( "TungErr::Url" );
+			io::ErrorKind::Other.into()
+		}
 
 		// This is an error specific to Text Messages that we don't use
 		//
-		TungErr::Utf8 => unreachable!( "TungErr::Utf8" ),
+		TungErr::Utf8 => {
+			error!( "TungErr::Utf8" );
+			io::ErrorKind::Other.into()
+		}
 
 		// I'd rather have this match exhaustive, but tungstenite has a Tls variant that
 		// is only there if they have a feature enabled. Since we cannot check whether
 		// a feature is enabled on a dependency, we have to go for wildcard here.
 		// As of tungstenite 0.19 Http and HttpFormat are also behind a feature flag.
 		//
-		x => unreachable!( "unmatched tungstenite error: {x}" ),
+		x => {
+			error!( "unmatched tungstenite error: {x}" );
+			io::ErrorKind::Other.into()
+		}
 	}
 }
 
@@ -576,11 +591,7 @@ impl<S> Observable< WsEvent > for TungWebSocket<S> where S: AsyncRead + AsyncWri
 
 	fn observe( &mut self, options: ObserveConfig< WsEvent > ) -> Observe< '_, WsEvent, Self::Error >
 	{
-		async move
-		{
-			self.notifier.observe( options ).await.map_err( Into::into )
-
-		}.boxed()
+		self.notifier.observe( options )
 	}
 }
 

@@ -28,7 +28,7 @@ pub enum WsErr
 	},
 
 	/// A websocket protocol error. On read it means the remote didn't respect the websocket protocol.
-	/// On write this means there's a bug in ws_stream_tungstenite and it will panic.
+	/// On write this means there's a bug in ws_stream_tungstenite and it will return [`std::io::ErrorKind::Other`].
 	//
 	Protocol,
 
@@ -41,6 +41,10 @@ pub enum WsErr
 	/// `poll_read` will just return `None`.
 	//
 	Closed,
+
+	/// Unreachable. This shouldn't happen but we need to match pharos error and want avoid panics.
+	//
+	Unreachable,
 }
 
 
@@ -51,12 +55,13 @@ impl std::error::Error for WsErr
 	{
 		match &self
 		{
-			WsErr::Tungstenite{ ref source } => Some(source),
-			WsErr::Io         { ref source } => Some(source),
+			WsErr::Tungstenite{ source } => Some(source),
+			WsErr::Io         { source } => Some(source),
 
 			WsErr::Protocol     |
 			WsErr::ReceivedText |
-			WsErr::Closed       => None
+			WsErr::Closed       |
+			WsErr::Unreachable  => None
 		}
 	}
 }
@@ -71,11 +76,11 @@ impl fmt::Display for WsErr
 		{
 			WsErr::Tungstenite{ source } =>
 
-				write!( f, "A tungstenite error happened: {}", source ),
+				write!( f, "A tungstenite error happened: {source}" ),
 
 			WsErr::Io{ source } =>
 
-				write!( f, "An io error happened: {}", source ),
+				write!( f, "An io error happened: {source}" ),
 
 			WsErr::Protocol =>
 
@@ -88,6 +93,10 @@ impl fmt::Display for WsErr
 			WsErr::Closed =>
 
 				write!( f, "The connection is already closed." ),
+
+			WsErr::Unreachable =>
+
+				write!( f, "A bug in ws_stream_tungstenite caused an error variant that should be unreachable. Please report at github.com/najamelan/ws_stream_tungstenite/issues." ),
 		}
 	}
 }
@@ -125,7 +134,7 @@ impl From< PharErr > for WsErr
 		match source.kind()
 		{
 			pharos::ErrorKind::Closed => WsErr::Closed,
-			_                         => unreachable!() ,
+			_                         => WsErr::Unreachable,
 		}
 	}
 }

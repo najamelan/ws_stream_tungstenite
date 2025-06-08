@@ -20,17 +20,17 @@ pub enum WsEvent
 	/// completed for you. Once the stream returns `None`, you can drop the [`WsStream`](crate::WsStream).
 	/// This is mainly useful in order to recover the close code and reason for debugging purposes.
 	//
-	CloseFrame( Option< CloseFrame<'static> > ),
+	CloseFrame( Option< CloseFrame > ),
 
 	/// The remote sent a Ping message. It will automatically be answered as long as you keep polling the
 	/// `AsyncRead`. This is returned as an event in case you want to analyze the payload, since only bytes
 	/// from Binary websocket messages are passed through the `AsyncRead`.
 	//
-	Ping(Vec<u8>),
+	Ping(Bytes),
 
 	/// The remote send us a Pong. Since we never send Pings, this is a unidirectional heartbeat.
 	//
-	Pong(Vec<u8>),
+	Pong(Bytes),
 
 	/// The connection is closed. Polling `WsStream` will return `None` on read and `io::ErrorKind::NotConnected`
 	/// on write soon. It's provided here for convenience so the task listening to these events know that

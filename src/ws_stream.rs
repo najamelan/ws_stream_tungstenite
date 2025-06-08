@@ -1,7 +1,7 @@
 use crate::{ import::*, tung_websocket::TungWebSocket, WsEvent, WsErr };
 
 
-/// Takes a [`WebSocketStream`](async_tungstenite::WebSocketStream) and implements futures 0.3 `AsyncRead`/`AsyncWrite`/`AsyncBufRead`.
+/// Takes a [`WebSocketStream`](async_tungstenite::WebSocketStream) and implements futures `AsyncRead`/`AsyncWrite`/`AsyncBufRead`.
 ///
 /// Will always create an entire Websocket message from every write. Tungstenite buffers messages up to
 /// `write_buffer_size` in their [`tungstenite::protocol::WebSocketConfig`]. If you want small messages to be sent out,
@@ -33,11 +33,11 @@ use crate::{ import::*, tung_websocket::TungWebSocket, WsEvent, WsErr };
 /// On writing, eg. `AsyncWrite::*` all errors are fatal.
 ///
 /// When a Protocol error is encountered during writing, it indicates that either _ws_stream_tungstenite_ or _tungstenite_ have
-/// a bug so it will panic.
+/// a bug.
 //
 pub struct WsStream<S> where S: AsyncRead + AsyncWrite + Send + Unpin
 {
-	inner: IoStream< TungWebSocket<S>, Vec<u8> >,
+	inner: IoStream< TungWebSocket<S>, Bytes >,
 	buffer_size: usize,
 }
 
@@ -219,10 +219,6 @@ impl<S> Observable< WsEvent > for WsStream<S> where S: AsyncRead + AsyncWrite + 
 
 	fn observe( &mut self, options: ObserveConfig< WsEvent > ) -> Observe< '_, WsEvent, Self::Error >
 	{
-		async move
-		{
-			self.inner.observe( options ).await.map_err( Into::into )
-
-		}.boxed()
+		self.inner.observe( options )
 	}
 }

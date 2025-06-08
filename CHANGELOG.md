@@ -2,15 +2,26 @@
 
 ## [Unreleased]
 
-  [Unreleased]: https://github.com/najamelan/ws_stream_tungstenite/compare/0.14.0...dev
+  [Unreleased]: https://github.com/najamelan/ws_stream_tungstenite/compare/release...dev
+
+
+## [0.15] - 2025-06-08
+
+  [0.15.0]: https://github.com/najamelan/ws_stream_tungstenite/compare/0.14.0...0.15.0
+
+  - **BREAKING_CHANGE**: update async-tungstenite to 0.29
+  - **BREAKING_CHANGE**: update tungstenite to 0.26
+  - remove all panics from the library
+  - add ssl example
 
 
 ## [0.14.0] - 2024-09-08
 
-  [0.12.0]: https://github.com/najamelan/ws_stream_tungstenite/compare/0.13.0...0.14.0
+  [0.14.0]: https://github.com/najamelan/ws_stream_tungstenite/compare/0.13.0...0.14.0
 
   - **BREAKING_CHANGE**: update async-tungstenite to 0.28
   - **BREAKING_CHANGE**: update tungstenite to 0.24
+
 
 ## [0.13.0] - 2024-02-16
 
